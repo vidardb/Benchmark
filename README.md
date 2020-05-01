@@ -16,16 +16,8 @@ Please don't hesitate to use issues. We will soon make the test more automatic.
 
 1. Install [libpgxx-6.4.6](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL
 
-2. Build the benchmark tools:
+2. Build all benchmark tools:
 
     ```shell
-    make
+    make clean all
     ```
-
-## Run benchmark
-
-You can run the following command to run benchmark for PostgreSQL and VidarDB:
-
-```shell
-make bench
-```
