@@ -1,0 +1,7 @@
+.project
+.cproject
+*.code-workspace
+*.vscode
+.settings/
+*_bench
+scripts/tpch-dbgen
