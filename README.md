@@ -1,4 +1,5 @@
 # Benchmarking
+
 This benchmark is to test insertion rate of PostgreSQL and the VidarDB (RocksDB style version).
 
 1. Please don't use programming language such as Python to do the test, since a large percentage of time would be spent in language side. Use C++ provided.
@@ -11,3 +12,20 @@ We have did test with TPC-H 10G and 1G in Ubuntu18.04 with PostgreSQL 11.6. You 
 
 Please don't hesitate to use issues. We will soon make the test more automatic.
 
+## Building
+
+1. Install [libpgxx-6.4.6](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL
+
+2. Build the benchmark tools:
+
+    ```shell
+    make
+    ```
+
+## Run benchmark
+
+You can run the following command to run benchmark for PostgreSQL and VidarDB:
+
+```shell
+make bench
+```
