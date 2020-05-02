@@ -53,14 +53,14 @@ int main(int argc, char** argv) {
     string source(getenv(kDATASOURCE));
 
     // print db info
-    cout << "******************" << endl;
-    cout << "db host: " << host << endl;
-    cout << "db port: " << port << endl;
-    cout << "db user: " << user << endl;
-    cout << "db name: " << db << endl;
-    cout << "db table: " << table << endl;
-    cout << "data source: " << source << endl;
-    cout << "******************" << endl;
+    cout << "********************" << endl;
+    cout << " db host: " << host << endl;
+    cout << " db port: " << port << endl;
+    cout << " db user: " << user << endl;
+    cout << " db name: " << db << endl;
+    cout << " db table: " << table << endl;
+    cout << " data source: " << source << endl;
+    cout << "********************" << endl;
 
     // connect to db
     connection C("hostaddr=" + host + " port=" + port +
@@ -74,24 +74,20 @@ int main(int argc, char** argv) {
 
     work T(C);
     tablewriter W(T, table);
-
-    auto start = std::chrono::high_resolution_clock::now();
     ifstream in(source);
     unsigned long long counter = 0;
 
+    cout << "Start to benchmark insertion rate ..." << endl;
+    auto start = std::chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
         unsigned long long orderKey = stoul(GetNthAttr(line, 0));
         unsigned long long lineNumber = stoul(GetNthAttr(line, 3));
         unsigned long long pKey = (orderKey<<32) | lineNumber;
 
         vector<string> row;
-        stringstream ss;
-        ss << pKey;
-        row.push_back(ss.str());
-
-        for (int i=1; i < 16; i++) {
-            string attr(GetNthAttr(line, i));
-            row.push_back(attr);
+        row.emplace_back(to_string(pKey));
+        for (int i = 1; i < 16; i++) {
+            row.emplace_back(GetNthAttr(line, i));
         }
 
         W.insert(row);
@@ -105,6 +101,5 @@ int main(int argc, char** argv) {
     std::chrono::duration<double, std::milli> ms = end - start;
     std::cout << "Insert " << counter << " rows and takes "
               << ms.count() << " ms" << std::endl;
-
     return 0;
 }

@@ -70,7 +70,8 @@ _gen_data() {
     table="L"  # lineitem
     cd $(dirname $TPCHCMD)
     if [ -e "$TPCHPATH/lineitem.tbl" ]; then
-        rm -f "$TPCHPATH/lineitem.tbl"
+        echo "remove $TPCHPATH/lineitem.tbl"
+        rm -rf "$TPCHPATH/lineitem.tbl"
     fi
 
     _trace "generate data for benchmark ( size: ${size}G table: $table ) ..."
@@ -106,7 +107,7 @@ _run_benchmark() {
     export DATASOURCE=$TPCHPATH/$DATASOURCE
     export PGHOST=$PGHOST
     export PGPORT=$PGPORT
-	export PGDATABASE=$PGDATABASE
+    export PGDATABASE=$PGDATABASE
     export PGUSER=$PGUSER
     $CURDIR/$bench
 }
