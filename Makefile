@@ -11,7 +11,7 @@ PGUSER ?= postgres
 # Build configuration
 CXX ?= c++
 WOPTS = -Wno-deprecated-declarations
-OPTS = -std=c++11 -I/usr/local/include -I/usr/include -lpqxx -lpq $(WOPTS)
+OPTS = -std=c++17 -I/usr/local/include -I/usr/include -lpqxx -lpq $(WOPTS)
 
 .PHONY: all
 all: fdw_bench pg_bench
@@ -20,11 +20,11 @@ all: fdw_bench pg_bench
 install-libpqxx:
 	sudo apt-get install libpqxx-dev -y
 
-.PHONY: install-libpqxx fdw_bench
+.PHONY: fdw_bench
 fdw_bench:
 	$(CXX) src/fdw_bench.cc $(OPTS) -o fdw_bench
 
-.PHONY: install-libpqxx pg_bench
+.PHONY: pg_bench
 pg_bench:
 	$(CXX) src/pg_bench.cc $(OPTS) -o pg_bench
 
@@ -44,7 +44,7 @@ gen-data:
 
 # run benchmark
 .PHONY: run-benchmark
-run-benchmark: clean install-libpqxx all install-tpch
+run-benchmark: clean all install-tpch
 	DATASOURCE=$(DATASOURCE) DATASIZE=$(DATASIZE) \
 	  PGHOST=$(PGHOST) PGPORT=$(PGPORT) \
 	  PGDATABASE=$(PGDATABASE) PGUSER=$(PGUSER) \

@@ -26,7 +26,7 @@ We plan to make the test more automatic soon.
 
 ## Run benchmark
 
-*Beforce running benchmark, please ensure the PostgreSQL server which has enabled [VidarDB engine](https://github.com/vidardb/PostgresForeignDataWrapper) is running in your local machine.*
+*Beforce running benchmark, please ensure the PostgreSQL server which has enabled [VidarDB Engine](https://github.com/vidardb/PostgresForeignDataWrapper) and has no password is running in your local machine.*
 
 - Run PostgreSQL benchmark:
 
