@@ -16,7 +16,13 @@ We plan to make the test more automatic soon.
 
 ## Building
 
-1. Install [libpgxx-6.4.6](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL.
+1. Install [libpgxx](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL.
+
+    - For Ubuntu:
+
+    ```shell
+    sudo apt-get install -y libpqxx-dev
+    ```
 
 2. Build all benchmark tools in the root directory of the repo:
 

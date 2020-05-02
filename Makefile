@@ -11,7 +11,8 @@ PGUSER ?= postgres
 # Build configuration
 CXX ?= c++
 WOPTS = -Wno-deprecated-declarations
-OPTS = -std=c++17 -I/usr/local/include -I/usr/include -lpqxx -lpq $(WOPTS)
+OPTS = -I/usr/local/include -I/usr/include -lpqxx -lpq $(WOPTS)
+OPTS += ${EXTRA_OPTS}
 
 .PHONY: all
 all: fdw_bench pg_bench
