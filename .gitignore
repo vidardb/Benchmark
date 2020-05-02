@@ -4,4 +4,4 @@
 *.vscode
 .settings/
 *_bench
-scripts/tpch-dbgen
+tpch-dbgen

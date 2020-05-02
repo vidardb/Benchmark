@@ -18,7 +18,7 @@ const char* kPGHOST = "PGHOST";
 const char* kPGPORT = "PGPORT";
 const char* kPGDATABASE = "PGDATABASE";
 const char* kPGUSER = "PGUSER";
-const char* kTableName = "lineitem";
+const char* kTableName = "LINEITEM";
 
 int GetStrPos(const char *haystack, const char needle, const int n) {
     if (n == 0) {
@@ -50,7 +50,19 @@ int main(int argc, char** argv) {
     string user(getenv(kPGUSER));
     string db(getenv(kPGDATABASE));
     string table(kTableName);
+    string source(getenv(kDATASOURCE));
 
+    // print db info
+    cout << "******************" << endl;
+    cout << "db host: " << host << endl;
+    cout << "db port: " << port << endl;
+    cout << "db user: " << user << endl;
+    cout << "db name: " << db << endl;
+    cout << "db table: " << table << endl;
+    cout << "data source: " << source << endl;
+    cout << "******************" << endl;
+
+    // connect to db
     connection C("hostaddr=" + host + " port=" + port +
                  " dbname=" + db + " user=" + user);
     if (C.is_open()) {
@@ -64,7 +76,7 @@ int main(int argc, char** argv) {
     tablewriter W(T, table);
 
     auto start = std::chrono::high_resolution_clock::now();
-    ifstream in(kDATASOURCE);
+    ifstream in(source);
     unsigned long long counter = 0;
 
     for (string line; getline(in, line); ) {

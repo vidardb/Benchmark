@@ -62,7 +62,7 @@ _install_tpch() {
 }
 
 _gen_data() {
-    size=$1
+    size=$2
     if [ -z "$size" ]; then
        size=1
     fi
@@ -73,18 +73,51 @@ _gen_data() {
         rm -f "$TPCHPATH/lineitem.tbl"
     fi
 
-    _trace "generating data for benchmarking ( size: ${size}G table: $table ) ..."
-    "$TPCHCMD" -s "$size" -T "$table"
-    _trace "generated data path: $TPCHPATH/lineitem.tbl"
+    _trace "generate data for benchmark ( size: ${size}G table: $table ) ..."
+    "$TPCHCMD" -f -s "$size" -T "$table"
+    _trace "benchmark data path: $TPCHPATH/lineitem.tbl"
 }
 
-## usage
+# psql should be installed
+_create_benchmark_tbl() {
+    _trace "create benchmark table ..."
+    if ! command -v psql > /dev/null; then
+        _print_fatal "psql should be installed"
+    else
+        psql -h$PGHOST -p$PGPORT -U$PGUSER -d$PGDATABASE -f $CURDIR/$1
+    fi
+}
+
+_run_benchmark() {
+    platform="VidarDB"
+    bench="fdw_bench"
+    tbl_ddl="sql/fdw_tbl_ddl.sql"
+    if [ "$2" = "pg" ]; then
+        platform="PostgreSQL"
+        bench="pg_bench"
+        tbl_ddl="sql/pg_tbl_ddl.sql"
+    fi
+
+    _gen_data $DATASIZE
+    _create_benchmark_tbl $tbl_ddl
+
+    # run benchmark
+    _trace "starting benchmark for $platform ..."
+    export DATASOURCE=$TPCHPATH/$DATASOURCE
+    export PGHOST=$PGHOST
+    export PGPORT=$PGPORT
+	export PGDATABASE=$PGDATABASE
+    export PGUSER=$PGUSER
+    $CURDIR/$bench
+}
+
 _usage() {
     cat << USAGE
-Usage: bash ${MYNAME} install_tpch|gen_data
+Usage: bash ${MYNAME} install_tpch|gen_data|run_benchmark
 Action:
-    install_tpch                      Install tpch.
+    install_tpch                      Install tpch-dbgen.
     gen_data [size_factor]            Generate tpch data.
+    run_benchmark [pg|fdw]            Run benchmark.
 USAGE
     exit 1
 }
@@ -96,7 +129,10 @@ case $action in
         _install_tpch
         ;;
     "gen_data" )
-        _gen_data
+        _gen_data "$@"
+        ;;
+    "run_benchmark" )
+        _run_benchmark "$@"
         ;;
     *)
         _usage

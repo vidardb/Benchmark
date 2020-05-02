@@ -14,10 +14,30 @@ Please don't hesitate to use issues. We will soon make the test more automatic.
 
 ## Building
 
-1. Install [libpgxx-6.4.6](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL
+1. Install [libpgxx-6.4.6](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL.
 
-2. Build all benchmark tools:
+2. Build all benchmark tools in the root directory of the repo:
 
     ```shell
-    make clean all
+    make all
     ```
+
+## Run benchmark
+
+*Beforce running benchmark, please ensure the PostgreSQL server which has enabled [VidarDB engine](https://github.com/vidardb/PostgresForeignDataWrapper) is running in your local machine.*
+
+- Run PostgreSQL benchmark:
+
+```shell
+# DATASIZE: benchmark data size, unit is GB.
+
+PLATFORM=pg DATASIZE=1 make run-benchmark
+```
+
+- Run VidarDB benchmark:
+
+```shell
+# DATASIZE: benchmark data size, unit is GB.
+
+PLATFORM=fdw DATASIZE=1 make run-benchmark
+```
