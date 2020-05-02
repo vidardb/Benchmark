@@ -9,6 +9,7 @@ MYNAME="${0##*/}"
 GITTPCH="https://github.com/vidardb/tpch-dbgen"
 TPCHPATH="$CURDIR/tpch-dbgen"
 TPCHCMD="$TPCHPATH/dbgen"
+TPCHDAT="lineitem.tbl"
 
 RET_OK=0
 RET_FAIL=1
@@ -69,14 +70,18 @@ _gen_data() {
 
     table="L"  # lineitem
     cd $(dirname $TPCHCMD)
-    if [ -e "$TPCHPATH/lineitem.tbl" ]; then
-        echo "remove $TPCHPATH/lineitem.tbl"
-        rm -rf "$TPCHPATH/lineitem.tbl"
+    if [ -e "$TPCHPATH/$TPCHDAT" ]; then
+        echo "remove $TPCHPATH/$TPCHDAT"
+        rm -rf "$TPCHPATH/$TPCHDAT"
     fi
 
     _trace "generate data for benchmark ( size: ${size}G table: $table ) ..."
     "$TPCHCMD" -f -s "$size" -T "$table"
-    _trace "benchmark data path: $TPCHPATH/lineitem.tbl"
+    # shuffle tcph data
+    shuf $TPCHPATH/$TPCHDAT -o $TPCHPATH/${TPCHDAT}.shuf
+    rm -rf "$TPCHPATH/$TPCHDAT"
+    mv $TPCHPATH/${TPCHDAT}.shuf $TPCHPATH/$TPCHDAT
+    _trace "benchmark data path: $TPCHPATH/$TPCHDAT"
 }
 
 # psql should be installed

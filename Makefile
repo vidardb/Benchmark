@@ -31,7 +31,7 @@ pg_bench:
 
 .PHONY: clean
 clean:
-	rm -rf fdw_bench pg_bench tpch-dbgen/lineitem.tbl
+	rm -rf fdw_bench pg_bench tpch-dbgen/$(DATASOURCE)
 
 # install tpch
 .PHONY: install-tpch

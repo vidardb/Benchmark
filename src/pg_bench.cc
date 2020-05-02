@@ -91,6 +91,7 @@ int main(int argc, char** argv) {
 
     W.complete();
     T.commit();
+    in.close();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms = end - start;
