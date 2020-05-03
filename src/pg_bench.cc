@@ -84,7 +84,6 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 16; i++) {
             row.emplace_back(GetNthAttr(line, i));
         }
-
         W.insert(row);
         counter++;
     }
@@ -95,7 +94,10 @@ int main(int argc, char** argv) {
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms = end - start;
-    std::cout << "Insert " << counter << " rows and takes "
-              << ms.count() << " ms" << std::endl;
+    double seconds = ms.count() / 1000;
+    double tps = counter / seconds;
+    std::cout << "Insert " << counter << " rows and take "
+              << seconds << " s, tps = " << tps
+              << std::endl;
     return 0;
 }

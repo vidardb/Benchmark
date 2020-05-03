@@ -50,7 +50,7 @@ _install_tpch() {
     fi
 
     _trace "compile source code for dbgen ..."
-    cd "$CURDIR/tpch-dbgen" && make &> /dev/null
+    cd "$TPCHPATH" && make &> /dev/null
     if [ $? -ne 0 ]; then
         _print_fatal "make tpch-dbgen failed."
     fi
@@ -63,9 +63,14 @@ _install_tpch() {
 }
 
 _gen_data() {
-    size=$2
+    size=$1
     if [ -z "$size" ]; then
        size=1
+    fi
+
+    path=$2
+    if [ -z "$path" -o "$path" = "$TPCHDAT" ]; then
+        path=$TPCHPATH/$TPCHDAT
     fi
 
     table="L"  # lineitem
@@ -80,15 +85,20 @@ _gen_data() {
     # shuffle tcph data
     shuf $TPCHPATH/$TPCHDAT -o $TPCHPATH/${TPCHDAT}.shuf
     rm -rf "$TPCHPATH/$TPCHDAT"
-    mv $TPCHPATH/${TPCHDAT}.shuf $TPCHPATH/$TPCHDAT
-    _trace "benchmark data path: $TPCHPATH/$TPCHDAT"
+    mv $TPCHPATH/${TPCHDAT}.shuf $path
+
+    if [ -e "$path" ]; then
+        _trace "benchmark data path: $path"
+    else
+        _print_fatal "generate benchmark data failed."
+    fi
 }
 
 # psql should be installed
 _create_benchmark_tbl() {
     _trace "create benchmark table ..."
     if ! command -v psql > /dev/null; then
-        _print_fatal "psql should be installed"
+        _print_fatal "psql should be installed."
     else
         psql -h$PGHOST -p$PGPORT -U$PGUSER -d$PGDATABASE -f $CURDIR/$1
     fi
@@ -104,12 +114,16 @@ _run_benchmark() {
         tbl_ddl="sql/pg_tbl_ddl.sql"
     fi
 
-    _gen_data $DATASIZE
+    _gen_data $DATASIZE $DATASOURCE
     _create_benchmark_tbl $tbl_ddl
 
     # run benchmark
     _trace "starting benchmark for $platform ..."
-    export DATASOURCE=$TPCHPATH/$DATASOURCE
+    if [ "$DATASOURCE" = "$TPCHDAT" ]; then
+        export DATASOURCE=$TPCHPATH/$TPCHDAT
+    else
+        export DATASOURCE=$DATASOURCE
+    fi
     export PGHOST=$PGHOST
     export PGPORT=$PGPORT
     export PGDATABASE=$PGDATABASE
@@ -121,14 +135,14 @@ _usage() {
     cat << USAGE
 Usage: bash ${MYNAME} install_tpch|gen_data|run_benchmark
 Action:
-    install_tpch                      Install tpch-dbgen.
-    gen_data [size_factor]            Generate tpch data.
-    run_benchmark [pg|fdw]            Run benchmark.
+    install_tpch                      Install tpch-dbgen tool.
+    gen_data [size] [path]            Generate tpch data, unit is GB.
+    run_benchmark [pg|fdw]            Run benchmark for pg or vidardb.
 USAGE
     exit 1
 }
 
-## main
+## main ##
 action=$1
 case $action in
     "install_tpch" )

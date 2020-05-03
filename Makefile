@@ -1,8 +1,9 @@
 # Benchmark configuration
 PLATFORM ?= fdw
 DATASOURCE ?= lineitem.tbl
-DATASIZE ?= 1  # GigaByte
+DATASIZE ?= 1  # GB
 
+# PG configuration
 PGHOST ?= 127.0.0.1
 PGPORT ?= 5432
 PGDATABASE ?= postgres
@@ -17,10 +18,6 @@ OPTS += ${EXTRA_OPTS}
 .PHONY: all
 all: fdw_bench pg_bench
 
-.PHONY: install-libpqxx
-install-libpqxx:
-	sudo apt-get install libpqxx-dev -y
-
 .PHONY: fdw_bench
 fdw_bench:
 	$(CXX) src/fdw_bench.cc $(OPTS) -o fdw_bench
@@ -31,7 +28,7 @@ pg_bench:
 
 .PHONY: clean
 clean:
-	rm -rf fdw_bench pg_bench tpch-dbgen/$(DATASOURCE)
+	rm -rf fdw_bench pg_bench
 
 # install tpch
 .PHONY: install-tpch
@@ -41,7 +38,7 @@ install-tpch:
 # generate tpch data
 .PHONY: gen-data
 gen-data:
-	bash benchmark.sh gen_data $(DATASIZE)
+	bash benchmark.sh gen_data $(DATASIZE) $(DATASOURCE)
 
 # run benchmark
 .PHONY: run-benchmark

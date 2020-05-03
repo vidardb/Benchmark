@@ -80,16 +80,17 @@ int main(int argc, char** argv) {
     cout << "Start to benchmark insertion rate ..." << endl;
     auto start = std::chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
-        unsigned long long orderKey = stoul(GetNthAttr(line, 0));
-        unsigned long long lineNumber = stoul(GetNthAttr(line, 3));
-        unsigned long long pKey = (orderKey<<32) | lineNumber;
-
         vector<string> row;
-        row.emplace_back(to_string(pKey));
+        string orderKey(GetNthAttr(line, 0));
+        string lineNumber(GetNthAttr(line, 3));
+        // composite key: (orderKey,lineNumber)
+        row.emplace_back("("+orderKey+","+lineNumber+")");
         for (int i = 1; i < 16; i++) {
+            if (i == 3) { // skip lineNumber
+                continue;
+            }
             row.emplace_back(GetNthAttr(line, i));
         }
-
         W.insert(row);
         counter++;
     }
@@ -100,7 +101,10 @@ int main(int argc, char** argv) {
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms = end - start;
-    std::cout << "Insert " << counter << " rows and takes "
-              << ms.count() << " ms" << std::endl;
+    double seconds = ms.count() / 1000;
+    double tps = counter / seconds;
+    std::cout << "Insert " << counter << " rows and take "
+              << seconds << " s, tps = " << tps
+              << std::endl;
     return 0;
 }

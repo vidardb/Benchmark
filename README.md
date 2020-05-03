@@ -16,13 +16,17 @@ We plan to make the test more automatic soon.
 
 ## Building
 
-1. Install [libpgxx](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL.
+1. Install [libpgxx](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL and 6.x.x version is preferred.
 
     - For Ubuntu:
 
-    ```shell
-    sudo apt-get install -y libpqxx-dev
-    ```
+        ```shell
+        sudo apt-get install -y libpqxx-dev
+        ```
+
+    - For Others:
+
+        You can follow the [Building libpgxx](https://github.com/jtv/libpqxx#building-libpqxx) to install.
 
 2. Build all benchmark tools in the root directory of the repo:
 
@@ -32,7 +36,12 @@ We plan to make the test more automatic soon.
 
 ## Run benchmark
 
-*Beforce running benchmark, please ensure the PostgreSQL server which has enabled [VidarDB Engine](https://github.com/vidardb/PostgresForeignDataWrapper) and has no password is running in your local machine.*
+Before running benchmark, please ensure:
+
+1. The PostgreSQL server has enabled [VidarDB Engine](https://github.com/vidardb/PostgresForeignDataWrapper).
+2. The PostgreSQL server has no password (currently the benchmark does not support password).
+3. Best to clear the system cache and restart the PostgreSQL server.
+
 
 - Run PostgreSQL benchmark:
 
