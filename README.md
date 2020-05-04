@@ -1,3 +1,5 @@
+<img style="width:100%;" src="/github-banner.png">
+
 # Benchmark
 
 This benchmark is used to test the insertion rate of PostgreSQL and VidarDB (RocksDB style version).
