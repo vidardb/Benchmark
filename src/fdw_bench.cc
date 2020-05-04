@@ -10,46 +10,17 @@
 #include <pqxx/connection>
 #include <pqxx/tablewriter>
 
+#include "bench.h"
+
 using namespace std;
 using namespace pqxx;
-
-const char* kDATASOURCE = "DATASOURCE";
-const char* kPGHOST = "PGHOST";
-const char* kPGPORT = "PGPORT";
-const char* kPGDATABASE = "PGDATABASE";
-const char* kPGUSER = "PGUSER";
-const char* kTableName = "LINEITEM";
-
-int GetStrPos(const char *haystack, const char needle, const int n) {
-    if (n == 0) {
-        return -1;
-    }
-
-    const char *res = haystack;
-    for (int i = 1; i <= n; ++i) {
-        res = strchr(res, needle);
-        if (!res) {
-            return strlen(haystack);
-        } else if (i != n) {
-            res++;
-        }
-    }
-
-    return res - haystack;
-}
-
-string GetNthAttr(const string& str, const int n) {
-    int i = GetStrPos(str.c_str(), '|', n);
-    int j = GetStrPos(str.c_str(), '|', n + 1);
-    return string(str.substr(i + 1, j - i - 1));
-}
 
 int main(int argc, char** argv) {
     string host(getenv(kPGHOST));
     string port(getenv(kPGPORT));
     string user(getenv(kPGUSER));
     string db(getenv(kPGDATABASE));
-    string table(kTableName);
+    string table(kTABLE);
     string source(getenv(kDATASOURCE));
 
     // print db info
@@ -75,7 +46,7 @@ int main(int argc, char** argv) {
     work T(C);
     tablewriter W(T, table);
     ifstream in(source);
-    unsigned long long counter = 0;
+    unsigned long long count = 0;
 
     cout << "Start to benchmark insertion rate ..." << endl;
     auto start = std::chrono::high_resolution_clock::now();
@@ -92,7 +63,7 @@ int main(int argc, char** argv) {
             row.emplace_back(GetNthAttr(line, i));
         }
         W.insert(row);
-        counter++;
+        count++;
     }
 
     W.complete();
@@ -102,8 +73,8 @@ int main(int argc, char** argv) {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms = end - start;
     double seconds = ms.count() / 1000;
-    double tps = counter / seconds;
-    std::cout << "Insert " << counter << " rows and take "
+    double tps = count / seconds;
+    std::cout << "Insert " << count << " rows and take "
               << seconds << " s, tps = " << tps
               << std::endl;
     return 0;

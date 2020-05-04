@@ -1,6 +1,6 @@
 # Benchmark
 
-This benchmark is used to test the insertion rate of PostgreSQL and the VidarDB (RocksDB style version).
+This benchmark is used to test the insertion rate of PostgreSQL and VidarDB (RocksDB style version).
 
 1. Please don't use "slow" programming language such as Python to do the test, since a large percentage of time would be spent in language side. Use C++ instead.
 
@@ -12,7 +12,7 @@ Please don't hesitate to [open an issue](https://github.com/vidardb/Benchmarking
 
 ## Building
 
-1. Install [libpgxx](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL and 6.x.x version is preferred.
+1. Install [libpqxx](https://github.com/jtv/libpqxx) which is the official C++ client API for PostgreSQL and 6.x.x version is preferred.
 
     - For Ubuntu:
 
@@ -22,9 +22,11 @@ Please don't hesitate to [open an issue](https://github.com/vidardb/Benchmarking
 
     - For Others:
 
-        You can follow the [Building libpgxx](https://github.com/jtv/libpqxx#building-libpqxx) to install.
+        You can follow the [Building libpqxx](https://github.com/jtv/libpqxx#building-libpqxx) to install.
 
-2. Build all benchmark tools in the root directory of the repo:
+2. Install [VidarDB Engine](https://github.com/vidardb/vidardb#building) static library which is needed for the benchmark tools.
+
+3. Build all benchmark tools in the root directory of the repo:
 
     ```shell
     make all
@@ -41,16 +43,24 @@ Before running benchmark, please ensure:
 
 - Run PostgreSQL benchmark:
 
-```shell
-# DATASIZE: benchmark data size, unit is GB.
+    ```shell
+    # DATASIZE: benchmark data size, unit is GB.
 
-PLATFORM=pg DATASIZE=1 make run-benchmark
-```
+    PLATFORM=pg DATASIZE=1 make run-benchmark
+    ```
 
 - Run VidarDB benchmark:
 
-```shell
-# DATASIZE: benchmark data size, unit is GB.
+    ```shell
+    # DATASIZE: benchmark data size, unit is GB.
 
-PLATFORM=fdw DATASIZE=1 make run-benchmark
-```
+    PLATFORM=fdw DATASIZE=1 make run-benchmark
+    ```
+
+- Run VidarDB Engine benchmark:
+
+    ```shell
+    # DATASIZE: benchmark data size, unit is GB.
+
+    PLATFORM=engine DATASIZE=1 make run-benchmark
+    ```

@@ -63,12 +63,12 @@ _install_tpch() {
 }
 
 _gen_data() {
-    size=$1
+    size=$2
     if [ -z "$size" ]; then
        size=1
     fi
 
-    path=$2
+    path=$3
     if [ -z "$path" -o "$path" = "$TPCHDAT" ]; then
         path=$TPCHPATH/$TPCHDAT
     fi
@@ -108,14 +108,20 @@ _run_benchmark() {
     platform="VidarDB"
     bench="fdw_bench"
     tbl_ddl="sql/fdw_tbl_ddl.sql"
+
     if [ "$2" = "pg" ]; then
         platform="PostgreSQL"
         bench="pg_bench"
         tbl_ddl="sql/pg_tbl_ddl.sql"
+    elif [ "$2" = "engine" ]; then
+        platform="VidarDB Engine"
+        bench="engine_bench"
     fi
 
-    _gen_data $DATASIZE $DATASOURCE
-    _create_benchmark_tbl $tbl_ddl
+    _gen_data "dummy" $DATASIZE $DATASOURCE
+    if [ "$platform" = "PostgreSQL" -o "$platform" = "VidarDB" ]; then
+        _create_benchmark_tbl $tbl_ddl
+    fi
 
     # run benchmark
     _trace "starting benchmark for $platform ..."
@@ -128,16 +134,17 @@ _run_benchmark() {
     export PGPORT=$PGPORT
     export PGDATABASE=$PGDATABASE
     export PGUSER=$PGUSER
+    export DBPATH=$DBPATH
     $CURDIR/$bench
 }
 
 _usage() {
     cat << USAGE
-Usage: bash ${MYNAME} install_tpch|gen_data|run_benchmark
+Usage: ./${MYNAME} install_tpch|gen_data|run_benchmark
 Action:
     install_tpch                      Install tpch-dbgen tool.
     gen_data [size] [path]            Generate tpch data, unit is GB.
-    run_benchmark [pg|fdw]            Run benchmark for pg or vidardb.
+    run_benchmark [pg|fdw|engine]     Run benchmark for PostgreSQL or VidarDB or VidarDB Engine.
 USAGE
     exit 1
 }
