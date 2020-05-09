@@ -28,19 +28,12 @@ class EngBenchmarkScenario : public BenchmarkScenario {
   public:
     virtual ~EngBenchmarkScenario() { delete db; };
 
-    using BenchmarkScenario::BeforeBenchmark;
     virtual bool BeforeBenchmark(void* args = nullptr) override;
 
-    using BenchmarkScenario::BenchInsertScenario;
     virtual void BenchInsertScenario(void* args = nullptr) override;
-
-    using BenchmarkScenario::BenchScanScenario;
     virtual void BenchScanScenario(void* args = nullptr) override;
-
-    using BenchmarkScenario::PrepareBenchmarkData;
+    
     virtual bool PrepareBenchmarkData() override;
-
-    using BenchmarkScenario::DisplayBenchmarkInfo;
     virtual void DisplayBenchmarkInfo() override;
 
   private:

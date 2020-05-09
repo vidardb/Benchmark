@@ -46,13 +46,10 @@ class DBBenchmarkScenario : public BenchmarkScenario {
   public:
     virtual ~DBBenchmarkScenario() { delete C; };
 
-    using BenchmarkScenario::BeforeBenchmark;
     virtual bool BeforeBenchmark(void* args = nullptr) override;
 
-    using BenchmarkScenario::BenchScanScenario;
     virtual void BenchScanScenario(void* args = nullptr) override;
 
-    using BenchmarkScenario::DisplayBenchmarkInfo;
     virtual void DisplayBenchmarkInfo() override;
 
   protected:

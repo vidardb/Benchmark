@@ -17,10 +17,8 @@ using namespace pqxx;
 
 class PGBenchmarkScenario : public DBBenchmarkScenario {
   public:
-    using DBBenchmarkScenario::BenchInsertScenario;
     virtual void BenchInsertScenario(void* args = nullptr) override;
-
-    using DBBenchmarkScenario::PrepareBenchmarkData;
+    
     virtual bool PrepareBenchmarkData() override;
 };
 
