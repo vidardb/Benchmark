@@ -3,5 +3,5 @@
 *.code-workspace
 *.vscode
 .settings/
-*_bench
+benchmark
 tpch-dbgen

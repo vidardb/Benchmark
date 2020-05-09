@@ -43,26 +43,19 @@ Before running benchmark, please ensure:
 3. Best to clear the system cache (`sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"`) and restart the PostgreSQL server.
 
 
-- Run PostgreSQL benchmark:
+- Run benchmark scenario:
 
     ```shell
+    # PLATFORM: benchmark database, optional values:
+    #           pg: PostgreSQL
+    #           fdw: VidarDB
+    #           engine: VidarDB Engine
+    #
+    # SCENARIO: benchmark scenario, optional values:
+    #           insert: line-by-line insertion
+    #           scan: full scan
+    #
     # DATASIZE: benchmark data size, unit is GB.
 
-    PLATFORM=pg DATASIZE=1 make run-benchmark
-    ```
-
-- Run VidarDB benchmark:
-
-    ```shell
-    # DATASIZE: benchmark data size, unit is GB.
-
-    PLATFORM=fdw DATASIZE=1 make run-benchmark
-    ```
-
-- Run VidarDB Engine benchmark:
-
-    ```shell
-    # DATASIZE: benchmark data size, unit is GB.
-
-    PLATFORM=engine DATASIZE=1 make run-benchmark
+    PLATFORM=fdw SCENARIO=insert DATASIZE=1 make run-benchmark
     ```

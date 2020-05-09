@@ -1,39 +1,32 @@
-# Benchmark configuration
+# Benchmark Configuration
 PLATFORM ?= fdw
+SCENARIO ?= insert
 DATASOURCE ?= lineitem.tbl
 DATASIZE ?= 1  # GB
 DBPATH ?= /tmp/vidardb_engine_benchmark
 
-# PG configuration
+# PG Configuration
 PGHOST ?= 127.0.0.1
 PGPORT ?= 5432
 PGDATABASE ?= postgres
 PGUSER ?= postgres
 
-# Build configuration
+# Build Configuration
 CXX ?= c++
 WCXXFLAGS = -Wno-deprecated-declarations
 CXXFLAGS = -I/usr/local/include -I/usr/include -lpqxx -lpq -lvidardb $(WCXXFLAGS)
 CXXFLAGS += ${EXTRA_CXXFLAGS}
 
 .PHONY: all
-all: fdw_bench pg_bench engine_bench
+all: benchmark
 
-.PHONY: fdw_bench
-fdw_bench:
-	$(CXX) src/fdw_bench.cc $(CXXFLAGS) -o fdw_bench
-
-.PHONY: pg_bench
-pg_bench:
-	$(CXX) src/pg_bench.cc $(CXXFLAGS) -o pg_bench
-
-.PHONY: engine_bench
-engine_bench:
-	$(CXX) src/engine_bench.cc $(CXXFLAGS) -o engine_bench
+.PHONY: benchmark
+benchmark:
+	$(CXX) src/benchmark.cc $(CXXFLAGS) -o benchmark
 
 .PHONY: clean
 clean:
-	rm -rf fdw_bench pg_bench engine_bench
+	rm -rf benchmark
 
 # install tpch
 .PHONY: install-tpch
@@ -48,7 +41,7 @@ gen-data:
 # run benchmark
 .PHONY: run-benchmark
 run-benchmark: clean all install-tpch
-	DATASOURCE=$(DATASOURCE) DATASIZE=$(DATASIZE) \
-	  DBPATH=$(DBPATH) PGHOST=$(PGHOST) PGPORT=$(PGPORT) \
-	  PGDATABASE=$(PGDATABASE) PGUSER=$(PGUSER) \
-	  ./benchmark.sh run_benchmark $(PLATFORM)
+	PLATFORM=$(PLATFORM) SCENARIO=$(SCENARIO) DATASOURCE=$(DATASOURCE) \
+	DATASIZE=$(DATASIZE) DBPATH=$(DBPATH) PGHOST=$(PGHOST) PGPORT=$(PGPORT) \
+	PGDATABASE=$(PGDATABASE) PGUSER=$(PGUSER) \
+	./benchmark.sh run_benchmark $(PLATFORM)
