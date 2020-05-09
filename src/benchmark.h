@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <chrono>
 #include <unordered_map>
 #include <stdlib.h>
 #include <pqxx/pqxx>
@@ -48,6 +49,9 @@ class DBBenchmarkScenario : public BenchmarkScenario {
     using BenchmarkScenario::BeforeBenchmark;
     virtual bool BeforeBenchmark(void* args = nullptr) override;
 
+    using BenchmarkScenario::BenchScanScenario;
+    virtual void BenchScanScenario(void* args = nullptr) override;
+
     using BenchmarkScenario::DisplayBenchmarkInfo;
     virtual void DisplayBenchmarkInfo() override;
 
@@ -70,6 +74,37 @@ bool DBBenchmarkScenario::BeforeBenchmark(void* args) {
         std::cout << "We are not connected!" << std::endl;
         return false;
     }
+}
+
+void DBBenchmarkScenario::BenchScanScenario(void* args) {
+    if (!PrepareBenchmarkData()) {
+        std::cout << "Prepare data failed" << std::endl;
+        return;
+    }
+
+    work T(*C);
+    std::string value;
+    unsigned long long count = 0;
+
+    std::cout << "Start to benchmark iteration rate ..." << std::endl;
+    auto start = std::chrono::high_resolution_clock::now();
+    result res = T.exec("SELECT * FROM " + std::string(kTableName));
+    T.commit();
+
+    for (const auto& row: res) {
+        for (const auto& col: row) {
+            value.assign(col.c_str());
+        }
+        count++;
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = count / seconds;
+    std::cout << "Iterate " << count << " rows and take "
+              << seconds << " s, tps = " << tps
+              << std::endl;
 }
 
 void DBBenchmarkScenario::DisplayBenchmarkInfo() {

@@ -20,9 +20,6 @@ class FDWBenchmarkScenario : public DBBenchmarkScenario {
     using DBBenchmarkScenario::BenchInsertScenario;
     virtual void BenchInsertScenario(void* args = nullptr) override;
 
-    using DBBenchmarkScenario::BenchScanScenario;
-    virtual void BenchScanScenario(void* args = nullptr) override;
-
     using DBBenchmarkScenario::PrepareBenchmarkData;
     virtual bool PrepareBenchmarkData() override;
 };
@@ -89,10 +86,6 @@ bool FDWBenchmarkScenario::PrepareBenchmarkData() {
     T.commit();
     in.close();
     return true;
-}
-
-void FDWBenchmarkScenario::BenchScanScenario(void* args) {
-    std::cout << "TODO: Not implemented" << std::endl;
 }
 
 BenchmarkScenario* NewFDWBenchmarkScenario() {

@@ -113,7 +113,7 @@ bool EngBenchmarkScenario::PrepareBenchmarkData() {
 
 void EngBenchmarkScenario::BenchScanScenario(void* args) {
     if (!PrepareBenchmarkData()) {
-        std::cout << "Prepare benchmark data failed" << std::endl;
+        std::cout << "Prepare data failed" << std::endl;
         return;
     }
 
