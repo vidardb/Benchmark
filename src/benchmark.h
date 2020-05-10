@@ -79,14 +79,13 @@ void DBBenchmarkScenario::BenchScanScenario(void* args) {
         return;
     }
 
-    work T(*C);
+    nontransaction T(*C);
     std::string value;
     unsigned long long count = 0;
 
     std::cout << "Start to benchmark iteration rate ..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
-    result res = T.exec("SELECT * FROM " + std::string(kTableName));
-    T.commit();
+    result res{ T.exec("SELECT * FROM " + std::string(kTableName)) };
 
     for (const auto& row: res) {
         for (const auto& col: row) {
@@ -94,6 +93,8 @@ void DBBenchmarkScenario::BenchScanScenario(void* args) {
         }
         count++;
     }
+
+    T.commit();  // nontransaction does nothing
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms = end - start;
