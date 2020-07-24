@@ -5,15 +5,15 @@
 #include <fstream>
 #include <vector>
 #include <chrono>
-#include <stdlib.h>
+using namespace std;
+
 #include <pqxx/pqxx>
 #include <pqxx/connection>
 #include <pqxx/tablewriter>
+using namespace pqxx;
 
 #include "benchmark.h"
 #include "util.h"
-
-using namespace pqxx;
 
 class PGBenchmarkScenario : public DBBenchmarkScenario {
   public:
@@ -24,14 +24,14 @@ class PGBenchmarkScenario : public DBBenchmarkScenario {
 
 void PGBenchmarkScenario::BenchInsertScenario(void* args) {
     work T(*C);
-    tablewriter W(T, std::string(kTableName));
-    std::ifstream in(std::string(getenv(kDataSource)));
+    tablewriter W(T, string(kTableName));
+    ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
 
-    std::cout << "Start to benchmark insertion rate ..." << std::endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    for (std::string line; getline(in, line); ) {
-        std::vector<std::string> row;
+    cout << "Start to benchmark insertion rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+    for (string line; getline(in, line); ) {
+        vector<string> row;
         for (int i = 0; i < 16; i++) {
             row.emplace_back(GetNthAttr(line, i));
         }
@@ -43,23 +43,22 @@ void PGBenchmarkScenario::BenchInsertScenario(void* args) {
     T.commit();
     in.close();
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> ms = end - start;
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
-    std::cout << "Insert " << count << " rows and take "
-              << seconds << " s, tps = " << tps
-              << std::endl;
+    cout << "Insert " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
 }
 
 bool PGBenchmarkScenario::PrepareBenchmarkData() {
     work T(*C);
-    tablewriter W(T, std::string(kTableName));
-    std::ifstream in(std::string(getenv(kDataSource)));
+    tablewriter W(T, string(kTableName));
+    ifstream in(string(getenv(kDataSource)));
 
-    std::cout << "Preparing benchmark data ..." << std::endl;
-    for (std::string line; getline(in, line); ) {
-        std::vector<std::string> row;
+    cout << "Preparing benchmark data ..." << endl;
+    for (string line; getline(in, line); ) {
+        vector<string> row;
         for (int i = 0; i < 16; i++) {
             row.emplace_back(GetNthAttr(line, i));
         }

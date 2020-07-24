@@ -5,10 +5,10 @@
 #include <iostream>
 #include <chrono>
 #include <unordered_map>
-#include <stdlib.h>
+using namespace std;
+
 #include <pqxx/pqxx>
 #include <pqxx/connection>
-
 using namespace pqxx;
 
 const char* kDataSource = "DATASOURCE";
@@ -21,12 +21,12 @@ const char* kTableName = "LINEITEM";
 const char* kPlatform = "PLATFORM";
 const char* kScenario = "SCENARIO";
 
-const std::string kPG = "pg";
-const std::string kFDW = "fdw";
-const std::string kEngine = "engine";
+const string kPG = "pg";
+const string kFDW = "fdw";
+const string kEngine = "engine";
 
-const std::string kInsert = "insert";
-const std::string kScan = "scan";
+const string kInsert = "insert";
+const string kScan = "scan";
 
 class BenchmarkScenario {
   public:
@@ -57,35 +57,36 @@ class DBBenchmarkScenario : public BenchmarkScenario {
 };
 
 bool DBBenchmarkScenario::BeforeBenchmark(void* args) {
-    std::string host(getenv(kPGHost));
-    std::string port(getenv(kPGPort));
-    std::string user(getenv(kPGUser));
-    std::string db(getenv(kPGDatabase));
+    string host(getenv(kPGHost));
+    string port(getenv(kPGPort));
+    string user(getenv(kPGUser));
+    string db(getenv(kPGDatabase));
 
     C = new connection("hostaddr=" + host + " port=" + port +
                           " dbname=" + db + " user=" + user);
     if (C->is_open()) {
-        std::cout << "We are connected to " << C->dbname() << std::endl;
+        cout << "We are connected to " << C->dbname() << endl;
         return true;
     } else {
-        std::cout << "We are not connected!" << std::endl;
+        cout << "We are not connected!" << endl;
         return false;
     }
 }
 
 void DBBenchmarkScenario::BenchScanScenario(void* args) {
     if (!PrepareBenchmarkData()) {
-        std::cout << "Prepare data failed" << std::endl;
+        cout << "Prepare data failed" << endl;
         return;
     }
 
-    nontransaction T(*C);
-    std::string value;
+    work T(*C);
+    string value;
     unsigned long long count = 0;
 
-    std::cout << "Start to benchmark iteration rate ..." << std::endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    result res{ T.exec("SELECT * FROM " + std::string(kTableName)) };
+    cout << "Start to benchmark iteration rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+    result res = T.exec("SELECT * FROM " + string(kTableName));
+    T.commit();
 
     for (const auto& row: res) {
         for (const auto& col: row) {
@@ -94,38 +95,35 @@ void DBBenchmarkScenario::BenchScanScenario(void* args) {
         count++;
     }
 
-    T.commit();  // nontransaction does nothing
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> ms = end - start;
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
-    std::cout << "Iterate " << count << " rows and take "
-              << seconds << " s, tps = " << tps
-              << std::endl;
+    cout << "Iterate " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
 }
 
 void DBBenchmarkScenario::DisplayBenchmarkInfo() {
-    std::string platform(getenv(kPlatform));
-    std::string scenario(getenv(kScenario));
-    std::string host(getenv(kPGHost));
-    std::string port(getenv(kPGPort));
-    std::string user(getenv(kPGUser));
-    std::string db(getenv(kPGDatabase));
-    std::string table(kTableName);
-    std::string source(getenv(kDataSource));
+    string platform(getenv(kPlatform));
+    string scenario(getenv(kScenario));
+    string host(getenv(kPGHost));
+    string port(getenv(kPGPort));
+    string user(getenv(kPGUser));
+    string db(getenv(kPGDatabase));
+    string table(kTableName);
+    string source(getenv(kDataSource));
 
-    std::cout << "********************" << std::endl;
-    std::cout << " platform: " << platform << std::endl;
-    std::cout << " scenario: " << scenario << std::endl;
-    std::cout << std::endl;
-    std::cout << " db host: " << host << std::endl;
-    std::cout << " db port: " << port << std::endl;
-    std::cout << " db user: " << user << std::endl;
-    std::cout << " db name: " << db << std::endl;
-    std::cout << " db table: " << table << std::endl;
-    std::cout << " data source: " << source << std::endl;
-    std::cout << "********************" << std::endl;
+    cout << "********************" << endl;
+    cout << " platform: " << platform << endl;
+    cout << " scenario: " << scenario << endl;
+    cout << endl;
+    cout << " db host: " << host << endl;
+    cout << " db port: " << port << endl;
+    cout << " db user: " << user << endl;
+    cout << " db name: " << db << endl;
+    cout << " db table: " << table << endl;
+    cout << " data source: " << source << endl;
+    cout << "********************" << endl;
 }
 
 #endif /* BENCHMARK_H_ */
