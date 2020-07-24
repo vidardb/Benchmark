@@ -2,8 +2,8 @@
 #define UTIL_H_
 
 #include <string>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+using namespace std;
 
 int IndexOf(const char *str, const char c, const int n) {
     if (n == 0) {
@@ -23,14 +23,14 @@ int IndexOf(const char *str, const char c, const int n) {
     return res - str;
 }
 
-std::string GetNthAttr(const std::string& str, const int n) {
+string GetNthAttr(const string& str, const int n) {
     int i = IndexOf(str.c_str(), '|', n);
     int j = IndexOf(str.c_str(), '|', n + 1);
-    return std::string(str.substr(i + 1, j - i - 1));
+    return string(str.substr(i + 1, j - i - 1));
 }
 
-bool StringEquals(const std::string& a, const std::string& b) {
-    return a.compare(b) == 0;
+bool StringEquals(const string& a, const string& b) {
+    return (a == b);
 }
 
 #endif /* UTIL_H_ */

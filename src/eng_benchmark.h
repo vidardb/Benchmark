@@ -5,24 +5,20 @@
 #include <fstream>
 #include <vector>
 #include <chrono>
-#include <stdlib.h>
-#include <pqxx/pqxx>
-#include <pqxx/connection>
-#include <pqxx/tablewriter>
+using namespace std;
 
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/table.h"
 #include "benchmark.h"
 #include "util.h"
-
 using namespace vidardb;
 
-const std::string delim = "|";
+const string delim = "|";
 
-void PutFixed32(std::string* dst, uint32_t value);
-void EncodeAttr(const std::string& s, std::string& k, std::string& v);
-void DecodeAttr(const std::string& attr);
+void PutFixed32(string* dst, uint32_t value);
+void EncodeAttr(const string& s, string& k, string& v);
+void DecodeAttr(const string& attr);
 
 class EngBenchmarkScenario : public BenchmarkScenario {
   public:
@@ -41,62 +37,60 @@ class EngBenchmarkScenario : public BenchmarkScenario {
 };
 
 bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
-    std::string dbpath(getenv(kDBPath));
+    string dbpath(getenv(kDBPath));
 
-    int ret = system(std::string("rm -rf " + dbpath).c_str());
+    int ret = system(string("rm -rf " + dbpath).c_str());
     if (ret != 0) {
-        std::cout << "remove engine dbpath failed" << std::endl;
+        cout << "remove engine dbpath failed" << endl;
     }
 
     Options options;
     options.IncreaseParallelism();
     options.OptimizeLevelStyleCompaction();
-    options.create_if_missing = true;
 
     Status s = DB::Open(options, dbpath, &db);
     return s.ok(); 
 }
 
 void EngBenchmarkScenario::BenchInsertScenario(void* args) {
-    std::ifstream in(std::string(getenv(kDataSource)));
+    ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
 
-    std::cout << "Start to benchmark insertion rate ..." << std::endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    for (std::string line; getline(in, line); ) {
-        std::string key, value;
+    cout << "Start to benchmark insertion rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+    for (string line; getline(in, line); ) {
+        string key, value;
         EncodeAttr(line.substr(0, line.size()-1), key, value);
 
         Status s = db->Put(WriteOptions(), key, value);
         if (!s.ok()) {
-            std::cout << s.ToString() << std::endl;
+            cout << s.ToString() << endl;
         }
         count++;
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
+    auto end = chrono::high_resolution_clock::now();
     db->Flush(FlushOptions());
     in.close();
 
-    std::chrono::duration<double, std::milli> ms = end - start;
+    chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
-    std::cout << "Insert " << count << " rows and take "
-              << seconds << " s, tps = " << tps
-              << std::endl; 
+    cout << "Insert " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl; 
 }
 
 bool EngBenchmarkScenario::PrepareBenchmarkData() {
-    std::ifstream in(std::string(getenv(kDataSource)));
+    ifstream in(string(getenv(kDataSource)));
 
-    std::cout << "Preparing benchmark data ..." << std::endl;
-    for (std::string line; getline(in, line); ) {
-        std::string key, value;
+    cout << "Preparing benchmark data ..." << endl;
+    for (string line; getline(in, line); ) {
+        string key, value;
         EncodeAttr(line.substr(0, line.size()-1), key, value);
 
         Status s = db->Put(WriteOptions(), key, value);
         if (!s.ok()) {
-            std::cout << s.ToString() << std::endl;
+            cout << s.ToString() << endl;
         }
     }
 
@@ -106,17 +100,17 @@ bool EngBenchmarkScenario::PrepareBenchmarkData() {
 
 void EngBenchmarkScenario::BenchScanScenario(void* args) {
     if (!PrepareBenchmarkData()) {
-        std::cout << "Prepare data failed" << std::endl;
+        cout << "Prepare data failed" << endl;
         return;
     }
 
-    std::string key, value;
+    string key, value;
     ReadOptions ro;
     unsigned long long count = 0;
     Iterator *it = db->NewIterator(ro);
 
-    std::cout << "Start to benchmark iteration rate ..." << std::endl;
-    auto start = std::chrono::high_resolution_clock::now();
+    cout << "Start to benchmark iteration rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
     for (it->SeekToFirst(); it->Valid(); it->Next()) {
         key.assign(it->key().data(), it->key().size());
         value.assign(it->value().data(), it->value().size());
@@ -124,33 +118,32 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
         count++;
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
+    auto end = chrono::high_resolution_clock::now();
     delete it;
 
-    std::chrono::duration<double, std::milli> ms = end - start;
+    chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
-    std::cout << "Iterate " << count << " rows and take "
-              << seconds << " s, tps = " << tps
-              << std::endl;
+    cout << "Iterate " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
 }
 
 void EngBenchmarkScenario::DisplayBenchmarkInfo() {
-    std::string platform(getenv(kPlatform));
-    std::string scenario(getenv(kScenario));
-    std::string source(getenv(kDataSource));
-    std::string dbpath(getenv(kDBPath));
+    string platform(getenv(kPlatform));
+    string scenario(getenv(kScenario));
+    string source(getenv(kDataSource));
+    string dbpath(getenv(kDBPath));
 
-    std::cout << "********************" << std::endl;
-    std::cout << " platform: " << platform << std::endl;
-    std::cout << " scenario: " << scenario << std::endl;
-    std::cout << std::endl;
-    std::cout << " db path: " << dbpath << std::endl;
-    std::cout << " data source: " << source << std::endl;
-    std::cout << "********************" << std::endl;
+    cout << "********************" << endl;
+    cout << " platform: " << platform << endl;
+    cout << " scenario: " << scenario << endl;
+    cout << endl;
+    cout << " db path: " << dbpath << endl;
+    cout << " data source: " << source << endl;
+    cout << "********************" << endl;
 }
 
-void PutFixed32(std::string* dst, uint32_t value) {
+void PutFixed32(string* dst, uint32_t value) {
     char buf[sizeof(value)];
     buf[0] = (value >> 24) & 0xff;
     buf[1] = (value >> 16) & 0xff;
@@ -159,25 +152,25 @@ void PutFixed32(std::string* dst, uint32_t value) {
     dst->append(buf, sizeof(buf));
 }
 
-void EncodeAttr(const std::string& s, std::string& k, std::string& v) {
-    std::string orderKey, lineNumber;
-    PutFixed32(&orderKey, std::stoul(GetNthAttr(s, 0)));
-    PutFixed32(&lineNumber, std::stoul(GetNthAttr(s, 3)));
+void EncodeAttr(const string& s, string& k, string& v) {
+    string orderKey, lineNumber;
+    PutFixed32(&orderKey, stoul(GetNthAttr(s, 0)));
+    PutFixed32(&lineNumber, stoul(GetNthAttr(s, 3)));
 
-    std::string partKey(GetNthAttr(s, 1));
-    std::string suppKey(GetNthAttr(s, 2));
-    std::string quantity(GetNthAttr(s, 4));
-    std::string extendedPrice(GetNthAttr(s, 5));
-    std::string discount(GetNthAttr(s, 6));
-    std::string tax(GetNthAttr(s, 7));
-    std::string returnFlag(GetNthAttr(s, 8));
-    std::string lineStatus(GetNthAttr(s, 9));
-    std::string shipDate(GetNthAttr(s, 10));
-    std::string commitDate(GetNthAttr(s, 11));
-    std::string receiptDate(GetNthAttr(s, 12));
-    std::string shipInstruct(GetNthAttr(s, 13));
-    std::string shipMode(GetNthAttr(s, 14));
-    std::string comment(GetNthAttr(s, 15));
+    string partKey(GetNthAttr(s, 1));
+    string suppKey(GetNthAttr(s, 2));
+    string quantity(GetNthAttr(s, 4));
+    string extendedPrice(GetNthAttr(s, 5));
+    string discount(GetNthAttr(s, 6));
+    string tax(GetNthAttr(s, 7));
+    string returnFlag(GetNthAttr(s, 8));
+    string lineStatus(GetNthAttr(s, 9));
+    string shipDate(GetNthAttr(s, 10));
+    string commitDate(GetNthAttr(s, 11));
+    string receiptDate(GetNthAttr(s, 12));
+    string shipInstruct(GetNthAttr(s, 13));
+    string shipMode(GetNthAttr(s, 14));
+    string comment(GetNthAttr(s, 15));
 
     k.assign(orderKey + delim + lineNumber);
     v.assign(partKey + delim + suppKey + delim + quantity + delim
@@ -187,9 +180,9 @@ void EncodeAttr(const std::string& s, std::string& k, std::string& v) {
         + shipInstruct + delim + shipMode + delim + comment);
 }
 
-void DecodeAttr(const std::string& attr) {
+void DecodeAttr(const string& attr) {
     size_t last = 0, next = 0;
-    while ((next = attr.find(delim, last)) != std::string::npos) {
+    while ((next = attr.find(delim, last)) != string::npos) {
         attr.substr(last, next - last);
         last = next + 1;
     }
