@@ -2,11 +2,7 @@
 
 # Benchmark
 
-<<<<<<< HEAD
 This benchmark is used to test the insert, load, scan of PostgreSQL and VidarDB (RocksDB style version).
-=======
-This benchmark is used to test the insertion rate of PostgreSQL and VidarDB engine (RocksDB style version).
->>>>>>> b855de0b10ad2cd04aa29f367e1d93c1f2e386c1
 
 We use TPC-H lineitem as the data source. Attention: ***The first attribute is implicit as the primary key for VidarDB engine.*** We also shuffle the data to avoid them coming in primary key order.
 
