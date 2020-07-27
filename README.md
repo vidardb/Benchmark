@@ -4,9 +4,7 @@
 
 This benchmark is used to test the insertion rate of PostgreSQL and VidarDB (RocksDB style version).
 
-1. Please don't use "slow" programming language such as Python to do the test, since a large percentage of time would be spent in language side. Use C++ instead.
-
-2. We use TPC-H lineitem as the data source. Attention: ***composite primary key is currently not supported by VidarDB, and the first attribute is implicit as the primary key.*** We also don't assume data comes in primary key order.
+We use TPC-H lineitem as the data source. Attention: ***The first attribute is implicit as the primary key.*** We also shuffle the data to avoid them coming in primary key order.
 
 We have finished the testing with TPC-H 10G and 1G in Ubuntu 18.04 with PostgreSQL 11.6. You can follow the instruction in our repo of [PostgreSQL Foreign Data Wrapper](https://github.com/vidardb/PostgresForeignDataWrapper) to enable VidarDB storage engine. 
 
@@ -39,7 +37,7 @@ Please don't hesitate to [open an issue](https://github.com/vidardb/Benchmarking
 Before running benchmark, please ensure:
 
 1. The PostgreSQL server has enabled [VidarDB Engine](https://github.com/vidardb/PostgresForeignDataWrapper).
-2. The PostgreSQL server has no password (currently the benchmark does not support password).
+2. The PostgreSQL server has no password and set trust in pg_hba.conf to 127.0.0.1/32 (currently the benchmark does not support password).
 3. Best to clear the system cache (`sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"`) and restart the PostgreSQL server.
 
 
