@@ -2,7 +2,7 @@
 
 # Benchmark
 
-This benchmark is used to test the insertion rate of PostgreSQL and VidarDB (RocksDB style version).
+This benchmark is used to test the insert, load, scan of PostgreSQL and VidarDB (RocksDB style version).
 
 1. Please don't use "slow" programming language such as Python to do the test, since a large percentage of time would be spent in language side. Use C++ instead.
 
@@ -53,6 +53,7 @@ Before running benchmark, please ensure:
     #
     # SCENARIO: benchmark scenario, optional values:
     #           insert: line-by-line insertion
+    #           load: for a bulk of lines
     #           scan: full scan
     #
     # DATASIZE: benchmark data size, unit is GB.

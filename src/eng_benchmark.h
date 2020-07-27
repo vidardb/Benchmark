@@ -27,6 +27,7 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     virtual bool BeforeBenchmark(void* args = nullptr) override;
 
     virtual void BenchInsertScenario(void* args = nullptr) override;
+    virtual void BenchLoadScenario(void* args = nullptr) override;
     virtual void BenchScanScenario(void* args = nullptr) override;
     
     virtual bool PrepareBenchmarkData() override;
@@ -53,6 +54,34 @@ bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
 }
 
 void EngBenchmarkScenario::BenchInsertScenario(void* args) {
+    ifstream in(string(getenv(kDataSource)));
+    unsigned long long count = 0;
+
+    cout << "Start to benchmark insertion rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+    for (string line; getline(in, line); ) {
+        string key, value;
+        EncodeAttr(line.substr(0, line.size()-1), key, value);
+
+        Status s = db->Put(WriteOptions(), key, value);
+        if (!s.ok()) {
+            cout << s.ToString() << endl;
+        }
+        count++;
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    db->Flush(FlushOptions());
+    in.close();
+
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = count / seconds;
+    cout << "Insert " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl; 
+}
+
+void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
 

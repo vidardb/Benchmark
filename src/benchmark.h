@@ -26,6 +26,7 @@ const string kFDW = "fdw";
 const string kEngine = "engine";
 
 const string kInsert = "insert";
+const string kLoad = "load";
 const string kScan = "scan";
 
 class BenchmarkScenario {
@@ -36,6 +37,7 @@ class BenchmarkScenario {
     virtual bool AfterBenchmark(void* args = nullptr) { return true; };
 
     virtual void BenchInsertScenario(void* args = nullptr) {};
+    virtual void BenchLoadScenario(void* args = nullptr) {};
     virtual void BenchScanScenario(void* args = nullptr) {};
 
     virtual bool PrepareBenchmarkData() { return true; };

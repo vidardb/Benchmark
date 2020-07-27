@@ -19,10 +19,53 @@ class FDWBenchmarkScenario : public DBBenchmarkScenario {
   public:
     virtual void BenchInsertScenario(void* args = nullptr) override;
 
+    virtual void BenchLoadScenario(void* args = nullptr) override;
+
     virtual bool PrepareBenchmarkData() override;
 };
 
 void FDWBenchmarkScenario::BenchInsertScenario(void* args) {
+    ifstream in(string(getenv(kDataSource)));
+    unsigned long long count = 0;
+
+    cout << "Start to benchmark insertion rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+    for (string line; getline(in, line); ) {
+        vector<string> row;
+        string orderKey(GetNthAttr(line, 0));
+        string lineNumber(GetNthAttr(line, 3));
+        // composite key: (orderKey,lineNumber)
+        row.emplace_back("("+orderKey+","+lineNumber+")");
+        for (int i = 1; i < 16; i++) {
+            if (i == 3) { // skip lineNumber
+                continue;
+            }
+            row.emplace_back(GetNthAttr(line, i));
+        }
+        work T(*C);
+        string stmt = "INSERT INTO LINEITEM VALUES(";
+        stmt += row[0] + ", " + row[1] + ", " + row[2] +  ", " + row[3] + ", " + 
+                row[4] + ", " + row[5] + ", " + row[6] + ", '" + row[7] + "', '" 
+                + row[8] + "', '" + row[9] + "', '" + row[10]  + "', '" + 
+                row[11] + "', '" + row[12]  + "', '" + row[13] + "', '" + 
+                row[14] + "');";
+        // cout<<stmt<<endl;
+        pqxx::result res = T.exec(stmt);
+        T.commit();
+        cout<<count++<<endl;
+    }
+
+    in.close();
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = count / seconds;
+    cout << "Insert " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
+}
+
+void FDWBenchmarkScenario::BenchLoadScenario(void* args) {
     work T(*C);
     tablewriter W(T, string(kTableName));
     ifstream in(string(getenv(kDataSource)));

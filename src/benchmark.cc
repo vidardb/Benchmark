@@ -42,6 +42,8 @@ int main(int argc, char** argv) {
     string scenario(getenv(kScenario));
     if (StringEquals(scenario, kInsert)) {
         s->BenchInsertScenario();
+    } else if (StringEquals(scenario, kLoad)) {
+        s->BenchLoadScenario(); 
     } else if (StringEquals(scenario, kScan)) {
         s->BenchScanScenario();
     } else {
