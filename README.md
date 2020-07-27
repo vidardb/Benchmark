@@ -2,9 +2,9 @@
 
 # Benchmark
 
-This benchmark is used to test the insertion rate of PostgreSQL and VidarDB (RocksDB style version).
+This benchmark is used to test the insertion rate of PostgreSQL and VidarDB engine (RocksDB style version).
 
-We use TPC-H lineitem as the data source. Attention: ***The first attribute is implicit as the primary key.*** We also shuffle the data to avoid them coming in primary key order.
+We use TPC-H lineitem as the data source. Attention: ***The first attribute is implicit as the primary key for VidarDB engine.*** We also shuffle the data to avoid them coming in primary key order.
 
 We have finished the testing with TPC-H 10G and 1G in Ubuntu 18.04 with PostgreSQL 11.6. You can follow the instruction in our repo of [PostgreSQL Foreign Data Wrapper](https://github.com/vidardb/PostgresForeignDataWrapper) to enable VidarDB storage engine. 
 
