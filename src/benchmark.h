@@ -3,13 +3,18 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <unordered_map>
+#include <set>
 using namespace std;
 
 #include <pqxx/pqxx>
 #include <pqxx/connection>
 using namespace pqxx;
+
+#include "util.h"
+
 
 const char* kDataSource = "DATASOURCE";
 const char* kPGHost = "PGHOST";
@@ -28,25 +33,46 @@ const string kEngine = "engine";
 const string kInsert = "insert";
 const string kLoad = "load";
 const string kScan = "scan";
+const string kGet = "get";
+
+const int kGetCount = 1000;
+
 
 class BenchmarkScenario {
   public:
-    virtual ~BenchmarkScenario() {};
+    virtual ~BenchmarkScenario() {}
 
-    virtual bool BeforeBenchmark(void* args = nullptr) { return true; };
-    virtual bool AfterBenchmark(void* args = nullptr) { return true; };
+    virtual bool BeforeBenchmark(void* args = nullptr) { return true; }
+    virtual bool AfterBenchmark(void* args = nullptr) { return true; }
 
-    virtual void BenchInsertScenario(void* args = nullptr) {};
-    virtual void BenchLoadScenario(void* args = nullptr) {};
-    virtual void BenchScanScenario(void* args = nullptr) {};
+    virtual void BenchInsertScenario(void* args = nullptr) {}
+    virtual void BenchLoadScenario(void* args = nullptr) {}
+    virtual void BenchScanScenario(void* args = nullptr) {}
+    virtual void BenchGetScenario(void* args = nullptr) {}
 
-    virtual bool PrepareBenchmarkData() { return true; };
-    virtual void DisplayBenchmarkInfo() {};
+    virtual bool PrepareBenchmarkData() { return true; }
+    virtual void DisplayBenchmarkInfo() {}
+
+    virtual void PrepareGetData(vector<pair<string, string>>& v) {
+        unsigned long long count = GetLineCount(getenv(kDataSource));
+        set<int> s;
+        for (int i=0; i<kGetCount; ++i) {
+            s.insert(rand()%count);
+        }
+
+        ifstream in(getenv(kDataSource));
+        string line;
+        for (int i = 0; std::getline(in, line); ++i) {
+            if (s.find(i) == s.end()) continue;
+            v.push_back({GetNthAttr(line, 0), GetNthAttr(line, 3)});        
+        }
+        in.close();
+    }
 };
 
 class DBBenchmarkScenario : public BenchmarkScenario {
   public:
-    virtual ~DBBenchmarkScenario() { delete C; };
+    virtual ~DBBenchmarkScenario() { delete C; }
 
     virtual bool BeforeBenchmark(void* args = nullptr) override;
 

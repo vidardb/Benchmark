@@ -33,4 +33,13 @@ bool StringEquals(const string& a, const string& b) {
     return (a == b);
 }
 
+unsigned long long GetLineCount(char* data) {
+    ifstream in(data);
+    string line;
+    unsigned long long count;
+    for (count = 0; std::getline(in, line); ++count);
+    in.close();
+    return count;
+}
+
 #endif /* UTIL_H_ */

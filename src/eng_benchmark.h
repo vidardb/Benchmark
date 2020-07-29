@@ -29,6 +29,7 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     virtual void BenchInsertScenario(void* args = nullptr) override;
     virtual void BenchLoadScenario(void* args = nullptr) override;
     virtual void BenchScanScenario(void* args = nullptr) override;
+    virtual void BenchGetScenario(void* args = nullptr) override;
     
     virtual bool PrepareBenchmarkData() override;
     virtual void DisplayBenchmarkInfo() override;
@@ -154,6 +155,32 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
     cout << "Iterate " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
+}
+
+void EngBenchmarkScenario::BenchGetScenario(void* args) {
+    vector<pair<string, string>> v;
+    PrepareGetData(v);
+    ifstream in(getenv(kDataSource));
+
+    auto start = chrono::high_resolution_clock::now();
+    for (auto& t : v) {
+        string orderKey, lineNumber;
+        PutFixed32(&orderKey, stoul(t.first));
+        PutFixed32(&lineNumber, stoul(t.second));
+        string key(orderKey + delim + lineNumber);
+        ReadOptions ro;
+        string val;
+        db->Get(ro, key, &val);
+    }
+
+    in.close();
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = v.size() / seconds;
+    cout << "Get " << v.size() << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 }
 
