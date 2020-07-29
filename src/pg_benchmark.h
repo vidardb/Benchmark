@@ -95,16 +95,15 @@ void PGBenchmarkScenario::BenchGetScenario(void* args) {
     ifstream in(getenv(kDataSource));
 
     auto start = chrono::high_resolution_clock::now();
+    work T(*C);
     for (auto& t : v) {
-        work T(*C);
         string stmt = "SELECT * FROM LINEITEM WHERE ";
         stmt += "L_ORDERKEY = " + t.first;
         stmt += " AND L_LINENUMBER = " + t.second;
         // cout<<stmt<<endl;
         pqxx::result res = T.exec(stmt);
-        T.commit();
     }
-
+    T.commit();
     in.close();
 
     auto end = chrono::high_resolution_clock::now();
