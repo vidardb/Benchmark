@@ -85,7 +85,7 @@ void EngBenchmarkScenario::BenchInsertScenario(void* args) {
 void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
-    int64_t entries_per_batch_ = 9;
+    int64_t entries_per_batch_ = 10;
 
     cout << "Start to benchmark loading rate ..." << endl;
 
@@ -104,10 +104,15 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
                 exit(1);
             }
             batch.Clear();
-        } else {
-            batch.Put(key, value);
         }
+        batch.Put(key, value);
         count++;
+    }
+
+    Status s = db->Write(WriteOptions(), &batch);
+    if (!s.ok()) {
+        cout << s.ToString() << endl;
+        exit(1);
     }
 
     auto end = chrono::high_resolution_clock::now();
