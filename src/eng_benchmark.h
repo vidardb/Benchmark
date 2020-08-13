@@ -85,16 +85,27 @@ void EngBenchmarkScenario::BenchInsertScenario(void* args) {
 void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
+    int64_t entries_per_batch_ = 9;
 
-    cout << "Start to benchmark insertion rate ..." << endl;
+    cout << "Start to benchmark loading rate ..." << endl;
+
     auto start = chrono::high_resolution_clock::now();
-    for (string line; getline(in, line); ) {
+
+    WriteBatch batch;
+
+    for (string line; getline(in, line);) {
         string key, value;
         EncodeAttr(line.substr(0, line.size()-1), key, value);
 
-        Status s = db->Put(WriteOptions(), key, value);
-        if (!s.ok()) {
-            cout << s.ToString() << endl;
+        if (count != 0 && count % entries_per_batch_ == 0) {
+            Status s = db->Write(WriteOptions(), &batch);
+            if (!s.ok()) {
+                cout << s.ToString() << endl;
+                exit(1);
+            }
+            batch.Clear();
+        } else {
+            batch.Put(key, value);
         }
         count++;
     }
