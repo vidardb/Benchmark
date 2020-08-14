@@ -15,7 +15,7 @@ PGUSER ?= postgres
 CXX ?= c++
 WCXXFLAGS = -Wno-deprecated-declarations
 CXXFLAGS = -I/usr/local/include -I/usr/include -lpqxx -lpq -lvidardb $(WCXXFLAGS)
-CXXFLAGS += ${EXTRA_CXXFLAGS}
+CXXFLAGS += ${EXTRA_CXXFLAGS} -O2
 
 .PHONY: all
 all: benchmark

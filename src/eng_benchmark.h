@@ -18,7 +18,7 @@ const string delim = "|";
 
 void PutFixed32(string* dst, uint32_t value);
 void EncodeAttr(const string& s, string& k, string& v);
-void DecodeAttr(const string& attr);
+string DecodeAttr(const string& attr);
 
 class EngBenchmarkScenario : public BenchmarkScenario {
   public:
@@ -49,6 +49,7 @@ bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
     Options options;
     options.IncreaseParallelism();
     options.OptimizeLevelStyleCompaction();
+    // options.PrepareForBulkLoad();
 
     Status s = DB::Open(options, dbpath, &db);
     return s.ok(); 
@@ -85,20 +86,20 @@ void EngBenchmarkScenario::BenchInsertScenario(void* args) {
 void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
-    int64_t entries_per_batch_ = 10;
+    int64_t entries_per_batch_ = 50;
 
     cout << "Start to benchmark loading rate ..." << endl;
 
     auto start = chrono::high_resolution_clock::now();
 
     WriteBatch batch;
-
+    WriteOptions opts;
     for (string line; getline(in, line);) {
         string key, value;
         EncodeAttr(line.substr(0, line.size()-1), key, value);
 
         if (count != 0 && count % entries_per_batch_ == 0) {
-            Status s = db->Write(WriteOptions(), &batch);
+            Status s = db->Write(opts, &batch);
             if (!s.ok()) {
                 cout << s.ToString() << endl;
                 exit(1);
@@ -225,24 +226,33 @@ void PutFixed32(string* dst, uint32_t value) {
 }
 
 void EncodeAttr(const string& s, string& k, string& v) {
-    string orderKey, lineNumber;
-    PutFixed32(&orderKey, stoul(GetNthAttr(s, 0)));
-    PutFixed32(&lineNumber, stoul(GetNthAttr(s, 3)));
+    vector<string> t;
+    t.reserve(16);
+    size_t last = 0, next = 0;
+    while ((next = s.find(delim, last)) != string::npos) {
+        t.push_back(s.substr(last, next - last));
+        last = next + 1;
+    }
+    t.push_back(s.substr(last));
 
-    string partKey(GetNthAttr(s, 1));
-    string suppKey(GetNthAttr(s, 2));
-    string quantity(GetNthAttr(s, 4));
-    string extendedPrice(GetNthAttr(s, 5));
-    string discount(GetNthAttr(s, 6));
-    string tax(GetNthAttr(s, 7));
-    string returnFlag(GetNthAttr(s, 8));
-    string lineStatus(GetNthAttr(s, 9));
-    string shipDate(GetNthAttr(s, 10));
-    string commitDate(GetNthAttr(s, 11));
-    string receiptDate(GetNthAttr(s, 12));
-    string shipInstruct(GetNthAttr(s, 13));
-    string shipMode(GetNthAttr(s, 14));
-    string comment(GetNthAttr(s, 15));
+    string orderKey, lineNumber;
+    PutFixed32(&orderKey, stoi(t[0]));
+    PutFixed32(&lineNumber, stoi(t[3]));
+
+    string partKey(move(t[1]));
+    string suppKey(move(t[2]));
+    string quantity(move(t[4]));
+    string extendedPrice(move(t[5]));
+    string discount(move(t[6]));
+    string tax(move(t[7]));
+    string returnFlag(move(t[8]));
+    string lineStatus(move(t[9]));
+    string shipDate(move(t[10]));
+    string commitDate(move(t[11]));
+    string receiptDate(move(t[12]));
+    string shipInstruct(move(t[13]));
+    string shipMode(move(t[14]));
+    string comment(move(t[15]));
 
     k.assign(orderKey + delim + lineNumber);
     v.assign(partKey + delim + suppKey + delim + quantity + delim
@@ -252,13 +262,15 @@ void EncodeAttr(const string& s, string& k, string& v) {
         + shipInstruct + delim + shipMode + delim + comment);
 }
 
-void DecodeAttr(const string& attr) {
+string DecodeAttr(const string& attr) {
+    string res;
     size_t last = 0, next = 0;
     while ((next = attr.find(delim, last)) != string::npos) {
-        attr.substr(last, next - last);
+        res.append(attr.substr(last, next - last));
         last = next + 1;
     }
-    attr.substr(last);
+    res.append(attr.substr(last));
+    return res;
 }
 
 BenchmarkScenario* NewEngBenchmarkScenario() {
