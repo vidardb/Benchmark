@@ -36,7 +36,7 @@ const string kScan = "scan";
 const string kGet = "get";
 
 const int kGetCount = 1000;
-
+const string delim = "|";
 
 class BenchmarkScenario {
   public:
@@ -81,6 +81,8 @@ class DBBenchmarkScenario : public BenchmarkScenario {
     virtual void DisplayBenchmarkInfo() override;
 
   protected:
+    vector<string> EncodeTuple(const string& line) { return vector<string>(); }
+
     connection* C;
 };
 

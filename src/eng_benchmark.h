@@ -14,11 +14,7 @@ using namespace std;
 #include "util.h"
 using namespace vidardb;
 
-const string delim = "|";
-
 void PutFixed32(string* dst, uint32_t value);
-void EncodeAttr(const string& s, string& k, string& v);
-string DecodeAttr(const string& attr);
 
 class EngBenchmarkScenario : public BenchmarkScenario {
   public:
@@ -35,6 +31,9 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     virtual void DisplayBenchmarkInfo() override;
 
   private:
+    void EncodeTuple(const string& s, string& k, string& v);
+    string DecodeTuple(const string& s);
+
     DB* db;
 };
 
@@ -63,7 +62,7 @@ void EngBenchmarkScenario::BenchInsertScenario(void* args) {
     auto start = chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
         string key, value;
-        EncodeAttr(line.substr(0, line.size()-1), key, value);
+        EncodeTuple(line, key, value);
 
         Status s = db->Put(WriteOptions(), key, value);
         if (!s.ok()) {
@@ -96,7 +95,7 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     WriteOptions opts;
     for (string line; getline(in, line);) {
         string key, value;
-        EncodeAttr(line.substr(0, line.size()-1), key, value);
+        EncodeTuple(line, key, value);
 
         if (count != 0 && count % entries_per_batch_ == 0) {
             Status s = db->Write(opts, &batch);
@@ -123,7 +122,7 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
-    cout << "Insert " << count << " rows and take "
+    cout << "Load " << count << " rows and take "
          << seconds << " s, tps = " << tps << endl; 
 }
 
@@ -133,7 +132,7 @@ bool EngBenchmarkScenario::PrepareBenchmarkData() {
     cout << "Preparing benchmark data ..." << endl;
     for (string line; getline(in, line); ) {
         string key, value;
-        EncodeAttr(line.substr(0, line.size()-1), key, value);
+        EncodeTuple(line, key, value);
 
         Status s = db->Put(WriteOptions(), key, value);
         if (!s.ok()) {
@@ -161,7 +160,7 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
     for (it->SeekToFirst(); it->Valid(); it->Next()) {
         key.assign(it->key().data(), it->key().size());
         value.assign(it->value().data(), it->value().size());
-	    DecodeAttr(value);
+	    DecodeTuple(value);
         count++;
     }
 
@@ -225,7 +224,7 @@ void PutFixed32(string* dst, uint32_t value) {
     dst->append(buf, sizeof(buf));
 }
 
-void EncodeAttr(const string& s, string& k, string& v) {
+void EngBenchmarkScenario:: EncodeTuple(const string& s, string& k, string& v) {
     vector<string> t;
     t.reserve(16);
     size_t last = 0, next = 0;
@@ -233,7 +232,6 @@ void EncodeAttr(const string& s, string& k, string& v) {
         t.push_back(s.substr(last, next - last));
         last = next + 1;
     }
-    t.push_back(s.substr(last));
 
     string orderKey, lineNumber;
     PutFixed32(&orderKey, stoi(t[0]));
@@ -262,14 +260,14 @@ void EncodeAttr(const string& s, string& k, string& v) {
         + shipInstruct + delim + shipMode + delim + comment);
 }
 
-string DecodeAttr(const string& attr) {
+string EngBenchmarkScenario::DecodeTuple(const string& s) {
     string res;
     size_t last = 0, next = 0;
-    while ((next = attr.find(delim, last)) != string::npos) {
-        res.append(attr.substr(last, next - last));
+    while ((next = s.find(delim, last)) != string::npos) {
+        res.append(s.substr(last, next - last));
         last = next + 1;
     }
-    res.append(attr.substr(last));
+    res.append(s.substr(last));
     return res;
 }
 

@@ -24,6 +24,9 @@ class FDWBenchmarkScenario : public DBBenchmarkScenario {
     virtual void BenchGetScenario(void* args = nullptr) override;
 
     virtual bool PrepareBenchmarkData() override;
+
+ protected:
+    vector<string> EncodeTuple(const string& line);
 };
 
 void FDWBenchmarkScenario::BenchInsertScenario(void* args) {
@@ -33,17 +36,8 @@ void FDWBenchmarkScenario::BenchInsertScenario(void* args) {
     cout << "Start to benchmark insertion rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
-        vector<string> row;
-        string orderKey(GetNthAttr(line, 0));
-        string lineNumber(GetNthAttr(line, 3));
-        // composite key: (orderKey,lineNumber)
-        row.emplace_back("("+orderKey+","+lineNumber+")");
-        for (int i = 1; i < 16; i++) {
-            if (i == 3) { // skip lineNumber
-                continue;
-            }
-            row.emplace_back(GetNthAttr(line, i));
-        }
+        vector<string> row(EncodeTuple(line));
+
         work T(*C);
         string stmt = "INSERT INTO LINEITEM VALUES(";
         stmt += row[0] + ", " + row[1] + ", " + row[2] +  ", " + row[3] + ", " + 
@@ -76,17 +70,7 @@ void FDWBenchmarkScenario::BenchLoadScenario(void* args) {
     cout << "Start to benchmark insertion rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
-        vector<string> row;
-        string orderKey(GetNthAttr(line, 0));
-        string lineNumber(GetNthAttr(line, 3));
-        // composite key: (orderKey,lineNumber)
-        row.emplace_back("("+orderKey+","+lineNumber+")");
-        for (int i = 1; i < 16; i++) {
-            if (i == 3) { // skip lineNumber
-                continue;
-            }
-            row.emplace_back(GetNthAttr(line, i));
-        }
+        vector<string> row(EncodeTuple(line));
         W.insert(row);
         count++;
     }
@@ -99,7 +83,7 @@ void FDWBenchmarkScenario::BenchLoadScenario(void* args) {
     chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
-    cout << "Insert " << count << " rows and take "
+    cout << "Load " << count << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 }
 
@@ -135,17 +119,7 @@ bool FDWBenchmarkScenario::PrepareBenchmarkData() {
 
     cout << "Preparing benchmark data ..." << endl;
     for (string line; getline(in, line); ) {
-        vector<string> row;
-        string orderKey(GetNthAttr(line, 0));
-        string lineNumber(GetNthAttr(line, 3));
-        // composite key: (orderKey,lineNumber)
-        row.emplace_back("("+orderKey+","+lineNumber+")");
-        for (int i = 1; i < 16; i++) {
-            if (i == 3) { // skip lineNumber
-                continue;
-            }
-            row.emplace_back(GetNthAttr(line, i));
-        }
+        vector<string> row(EncodeTuple(line));
         W.insert(row);
     }
 
@@ -153,6 +127,28 @@ bool FDWBenchmarkScenario::PrepareBenchmarkData() {
     T.commit();
     in.close();
     return true;
+}
+
+vector<string> FDWBenchmarkScenario::EncodeTuple(const string& line) {
+    vector<string> row;
+    row.reserve(15);
+    size_t last = 0, next = 0;
+    int i = 0;
+    while ((next = line.find(delim, last)) != string::npos) {
+        string attr = line.substr(last, next - last);
+        // composite key: (orderKey,lineNumber)
+        if (i == 0) {
+            row.push_back("(" + attr + ",");
+        } else if (i == 3) {
+            row[0].append(attr + ")");
+        } else {
+            row.emplace_back(attr);
+        }
+
+        last = next + 1;
+        ++i;
+    }
+    return row;
 }
 
 BenchmarkScenario* NewFDWBenchmarkScenario() {

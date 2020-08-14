@@ -24,6 +24,9 @@ class PGBenchmarkScenario : public DBBenchmarkScenario {
     virtual void BenchGetScenario(void* args = nullptr) override;
     
     virtual bool PrepareBenchmarkData() override;
+
+ protected:
+    vector<string> EncodeTuple(const string& line);
 };
 
 void PGBenchmarkScenario::BenchInsertScenario(void* args) {
@@ -33,10 +36,8 @@ void PGBenchmarkScenario::BenchInsertScenario(void* args) {
     cout << "Start to benchmark insertion rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
-        vector<string> row;
-        for (int i = 0; i < 16; i++) {
-            row.emplace_back(GetNthAttr(line, i));
-        }
+        vector<string> row(EncodeTuple(line));
+
         work T(*C);
         string stmt = "INSERT INTO LINEITEM VALUES(";
         stmt += row[0] + ", " + row[1] + ", " + row[2] +  ", " + row[3] + ", " + 
@@ -69,10 +70,7 @@ void PGBenchmarkScenario::BenchLoadScenario(void* args) {
     cout << "Start to benchmark insertion rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
-        vector<string> row;
-        for (int i = 0; i < 16; i++) {
-            row.emplace_back(GetNthAttr(line, i));
-        }
+        vector<string> row(EncodeTuple(line));
         W.insert(row);
         count++;
     }
@@ -85,7 +83,7 @@ void PGBenchmarkScenario::BenchLoadScenario(void* args) {
     chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
-    cout << "Insert " << count << " rows and take "
+    cout << "Load " << count << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 }
 
@@ -121,10 +119,7 @@ bool PGBenchmarkScenario::PrepareBenchmarkData() {
 
     cout << "Preparing benchmark data ..." << endl;
     for (string line; getline(in, line); ) {
-        vector<string> row;
-        for (int i = 0; i < 16; i++) {
-            row.emplace_back(GetNthAttr(line, i));
-        }
+        vector<string> row(EncodeTuple(line));
         W.insert(row);
     }
 
@@ -132,6 +127,17 @@ bool PGBenchmarkScenario::PrepareBenchmarkData() {
     T.commit();
     in.close();
     return true;
+}
+
+vector<string> PGBenchmarkScenario::EncodeTuple(const string& line) {
+    vector<string> row;
+    row.reserve(16);
+    size_t last = 0, next = 0;
+    while ((next = line.find(delim, last)) != string::npos) {
+        row.emplace_back(line.substr(last, next - last));
+        last = next + 1;
+    }
+    return row;   
 }
 
 BenchmarkScenario* NewPGBenchmarkScenario() {
