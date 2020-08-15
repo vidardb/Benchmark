@@ -53,6 +53,8 @@ Before running benchmark, please ensure:
     #           insert: line-by-line insertion
     #           load: for a bulk of lines
     #           scan: full scan
+    #           getrand: get tuples by random primary keys  
+    #           getlast: get tuples by last N primary keys 
     #
     # DATASIZE: benchmark data size, unit is GB.
 

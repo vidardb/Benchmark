@@ -46,8 +46,10 @@ int main(int argc, char** argv) {
         s->BenchLoadScenario(); 
     } else if (StringEquals(scenario, kScan)) {
         s->BenchScanScenario();
-    } else if (StringEquals(scenario, kGet)) {
-        s->BenchGetScenario();
+    } else if (StringEquals(scenario, kGetRandom)) {
+        s->BenchGetScenario(GetType::GetRand);
+    } else if (StringEquals(scenario, kGetLast)) {
+        s->BenchGetScenario(GetType::GetLast);
     } else {
         cout << "unsupported scenario!" << endl;
     }

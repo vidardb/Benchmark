@@ -21,7 +21,7 @@ class FDWBenchmarkScenario : public DBBenchmarkScenario {
 
     virtual void BenchLoadScenario(void* args = nullptr) override;
 
-    virtual void BenchGetScenario(void* args = nullptr) override;
+    virtual void BenchGetScenario(GetType type) override;
 
     virtual bool PrepareBenchmarkData() override;
 
@@ -33,24 +33,22 @@ void FDWBenchmarkScenario::BenchInsertScenario(void* args) {
     ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
 
+    work T(*C);
     cout << "Start to benchmark insertion rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
         vector<string> row(EncodeTuple(line));
 
-        work T(*C);
         string stmt = "INSERT INTO LINEITEM VALUES(";
         stmt += row[0] + ", " + row[1] + ", " + row[2] +  ", " + row[3] + ", " + 
                 row[4] + ", " + row[5] + ", " + row[6] + ", '" + row[7] + "', '" 
                 + row[8] + "', '" + row[9] + "', '" + row[10]  + "', '" + 
                 row[11] + "', '" + row[12]  + "', '" + row[13] + "', '" + 
                 row[14] + "');";
-        // cout<<stmt<<endl;
         pqxx::result res = T.exec(stmt);
-        T.commit();
-        cout<<count++<<endl;
+        count++;
     }
-
+    T.commit();
     in.close();
 
     auto end = chrono::high_resolution_clock::now();
@@ -87,9 +85,9 @@ void FDWBenchmarkScenario::BenchLoadScenario(void* args) {
          << seconds << " s, tps = " << tps << endl;
 }
 
-void FDWBenchmarkScenario::BenchGetScenario(void* args) {
+void FDWBenchmarkScenario::BenchGetScenario(GetType type) {
     vector<pair<string, string>> v;
-    PrepareGetData(v);
+    PrepareGetData(v, type);
     ifstream in(getenv(kDataSource));
 
     auto start = chrono::high_resolution_clock::now();

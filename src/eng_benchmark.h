@@ -25,7 +25,7 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     virtual void BenchInsertScenario(void* args = nullptr) override;
     virtual void BenchLoadScenario(void* args = nullptr) override;
     virtual void BenchScanScenario(void* args = nullptr) override;
-    virtual void BenchGetScenario(void* args = nullptr) override;
+    virtual void BenchGetScenario(GetType type) override;
     
     virtual bool PrepareBenchmarkData() override;
     virtual void DisplayBenchmarkInfo() override;
@@ -174,9 +174,9 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
          << seconds << " s, tps = " << tps << endl;
 }
 
-void EngBenchmarkScenario::BenchGetScenario(void* args) {
+void EngBenchmarkScenario::BenchGetScenario(GetType type) {
     vector<pair<string, string>> v;
-    PrepareGetData(v);
+    PrepareGetData(v, type);
     ifstream in(getenv(kDataSource));
 
     auto start = chrono::high_resolution_clock::now();

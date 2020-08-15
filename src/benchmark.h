@@ -33,13 +33,21 @@ const string kEngine = "engine";
 const string kInsert = "insert";
 const string kLoad = "load";
 const string kScan = "scan";
-const string kGet = "get";
+const string kGetRandom = "getrand";
+const string kGetLast = "getlast";
 
 const int kGetCount = 1000;
 const string delim = "|";
 
+enum GetType {
+    GetRand, 
+    GetLast,
+};
+
+
 class BenchmarkScenario {
   public:
+    
     virtual ~BenchmarkScenario() {}
 
     virtual bool BeforeBenchmark(void* args = nullptr) { return true; }
@@ -48,16 +56,22 @@ class BenchmarkScenario {
     virtual void BenchInsertScenario(void* args = nullptr) {}
     virtual void BenchLoadScenario(void* args = nullptr) {}
     virtual void BenchScanScenario(void* args = nullptr) {}
-    virtual void BenchGetScenario(void* args = nullptr) {}
+    virtual void BenchGetScenario(GetType type) {}
 
     virtual bool PrepareBenchmarkData() { return true; }
     virtual void DisplayBenchmarkInfo() {}
 
-    virtual void PrepareGetData(vector<pair<string, string>>& v) {
+    virtual void PrepareGetData(vector<pair<string, string>>& v, GetType type) {
         unsigned long long count = GetLineCount(getenv(kDataSource));
         set<int> s;
-        for (int i=0; i<kGetCount; ++i) {
-            s.insert(rand()%count);
+        if (type == GetType::GetRand) {
+            for (int i=0; i<kGetCount; ++i) {
+                s.insert(rand()%count);
+            }
+        } else if (type == GetType::GetLast) {
+            for (int i=count-kGetCount; i<count; ++i) {
+                s.insert(i);
+            }
         }
 
         ifstream in(getenv(kDataSource));
