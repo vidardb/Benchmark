@@ -6,7 +6,7 @@ This benchmark is used to test the insert, load, scan of PostgreSQL and VidarDB 
 
 We use TPC-H lineitem as the data source. Attention: ***The first attribute is implicit as the primary key for VidarDB engine.*** We also shuffle the data to avoid them coming in primary key order.
 
-We have finished the testing with TPC-H 10G and 1G in Ubuntu 18.04 with PostgreSQL 11.6. You can follow the instruction in our repo of [PostgreSQL Foreign Data Wrapper](https://github.com/vidardb/PostgresForeignDataWrapper) to enable VidarDB storage engine. 
+We have finished the testing with TPC-H 10G and 1G in Ubuntu 20.04 with PostgreSQL 12.3. You can follow the instruction in our repo of [pgrocks-fdw](https://github.com/vidardb/pgrocks-fdw) to enable VidarDB storage engine. 
 
 Please don't hesitate to [open an issue](https://github.com/vidardb/Benchmarking/issues) if you have a problem running with our benchmark.
 
@@ -36,7 +36,7 @@ Please don't hesitate to [open an issue](https://github.com/vidardb/Benchmarking
 
 Before running benchmark, please ensure:
 
-1. The PostgreSQL server has enabled [VidarDB Engine](https://github.com/vidardb/PostgresForeignDataWrapper).
+1. The PostgreSQL server has enabled [VidarDB Engine](https://github.com/vidardb/pgrocks-fdw).
 2. The PostgreSQL server has no password and set trust in pg_hba.conf to 127.0.0.1/32 (currently the benchmark does not support password).
 3. Best to clear the system cache (`sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"`) and restart the PostgreSQL server.
 

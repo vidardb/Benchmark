@@ -88,7 +88,6 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     int64_t entries_per_batch_ = 50;
 
     cout << "Start to benchmark loading rate ..." << endl;
-
     auto start = chrono::high_resolution_clock::now();
 
     WriteBatch batch;
@@ -149,6 +148,7 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
         cout << "Prepare data failed" << endl;
         return;
     }
+    db->CompactRange(CompactRangeOptions(), nullptr, nullptr);
 
     string key, value;
     ReadOptions ro;
@@ -175,10 +175,19 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
 }
 
 void EngBenchmarkScenario::BenchGetScenario(GetType type) {
+    if (!PrepareBenchmarkData()) {
+        cout << "Prepare data failed" << endl;
+        return;
+    }
+    if (type == GetType::GetRand) {
+        db->CompactRange(CompactRangeOptions(), nullptr, nullptr);
+    }
+
     vector<pair<string, string>> v;
     PrepareGetData(v, type);
     ifstream in(getenv(kDataSource));
 
+    cout << "Start to benchmark get rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (auto& t : v) {
         string orderKey, lineNumber;

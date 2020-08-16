@@ -66,7 +66,7 @@ void PGBenchmarkScenario::BenchLoadScenario(void* args) {
     ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
 
-    cout << "Start to benchmark insertion rate ..." << endl;
+    cout << "Start to benchmark loading rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (string line; getline(in, line); ) {
         vector<string> row(EncodeTuple(line));
@@ -87,10 +87,16 @@ void PGBenchmarkScenario::BenchLoadScenario(void* args) {
 }
 
 void PGBenchmarkScenario::BenchGetScenario(GetType type) {
+    if (!PrepareBenchmarkData()) {
+        cout << "Prepare data failed" << endl;
+        return;
+    }
+
     vector<pair<string, string>> v;
     PrepareGetData(v, type);
     ifstream in(getenv(kDataSource));
 
+    cout << "Start to benchmark get rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     work T(*C);
     for (auto& t : v) {
