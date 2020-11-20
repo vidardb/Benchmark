@@ -28,6 +28,7 @@ const char* kScenario = "SCENARIO";
 
 const string kPG = "pg";
 const string kFDW = "fdw";
+const string kTBAM = "tbam";
 const string kEngine = "engine";
 
 const string kInsert = "insert";

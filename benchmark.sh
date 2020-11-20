@@ -13,6 +13,7 @@ TPCHDAT="lineitem.tbl"
 
 PLATFORM_PG="pg"
 PLATFORM_FDW="fdw"
+PLATFORM_TBAM="tbam"
 PLATFORM_ENG="engine"
 
 RET_OK=0
@@ -119,6 +120,11 @@ _run_benchmark() {
             platform="VidarDB"
             bench="fdw_bench"
             tbl_ddl="sql/fdw_tbl_ddl.sql"
+            ;;
+        $PLATFORM_TBAM)
+            platform="VidarDB"
+            bench="tbam_bench"
+            tbl_ddl="sql/tbam_tbl_ddl.sql"
             ;;
         $PLATFORM_ENG)
             platform="VidarDB Engine"

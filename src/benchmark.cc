@@ -4,6 +4,7 @@ using namespace std;
 #include "benchmark.h"
 #include "pg_benchmark.h"
 #include "fdw_benchmark.h"
+#include "tbam_benchmark.h"
 #include "eng_benchmark.h"
 #include "util.h"
 
@@ -16,6 +17,10 @@ BenchmarkScenario* NewBenchmarkScenario() {
 
     if (StringEquals(platform, kFDW)) {
         return NewFDWBenchmarkScenario();
+    }
+
+    if (StringEquals(platform, kTBAM)) {
+        return NewTBAMBenchmarkScenario();
     }
 
     if (StringEquals(platform, kEngine)) {
