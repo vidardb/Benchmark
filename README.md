@@ -48,6 +48,7 @@ Before running benchmark, please ensure:
     #           pg: PostgreSQL
     #           fdw: VidarDB
     #           engine: VidarDB Engine
+    #           tbam: lastest VidarDB
     #
     # SCENARIO: benchmark scenario, optional values:
     #           insert: line-by-line insertion
