@@ -108,10 +108,13 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
         count++;
     }
 
-    Status s = db->Write(WriteOptions(), &batch);
-    if (!s.ok()) {
-        cout << s.ToString() << endl;
-        exit(1);
+    if (batch.Count() > 0) {
+        Status s = db->Write(WriteOptions(), &batch);
+        if (!s.ok()) {
+            cout << s.ToString() << endl;
+            exit(1);
+        }
+        batch.Clear();
     }
 
     auto end = chrono::high_resolution_clock::now();

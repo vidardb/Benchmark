@@ -142,7 +142,7 @@ vector<string> PGBenchmarkScenario::EncodeTuple(const string& line) {
         row.emplace_back(line.substr(last, next - last));
         last = next + 1;
     }
-    return row;   
+    return row;
 }
 
 BenchmarkScenario* NewPGBenchmarkScenario() {
