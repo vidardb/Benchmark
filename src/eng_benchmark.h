@@ -46,9 +46,10 @@ bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
     }
 
     Options options;
-    options.IncreaseParallelism();
-    options.OptimizeLevelStyleCompaction();
+    // options.IncreaseParallelism();
+    // options.OptimizeLevelStyleCompaction();
     // options.PrepareForBulkLoad();
+    options.OptimizeAdaptiveLevelStyleCompaction();
 
     Status s = DB::Open(options, dbpath, &db);
     return s.ok(); 
@@ -83,6 +84,11 @@ void EngBenchmarkScenario::BenchInsertScenario(void* args) {
 }
 
 void EngBenchmarkScenario::BenchLoadScenario(void* args) {
+    bool disable_auto_compactions = db->GetOptions().disable_auto_compactions;
+    if (!disable_auto_compactions) {
+        db->SetOptions({{"disable_auto_compactions", "true"}});
+    }
+
     ifstream in(string(getenv(kDataSource)));
     unsigned long long count = 0;
     int64_t entries_per_batch_ = 50;
@@ -125,7 +131,11 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
     cout << "Load " << count << " rows and take "
-         << seconds << " s, tps = " << tps << endl; 
+         << seconds << " s, tps = " << tps << endl;
+
+    if (!disable_auto_compactions) {
+        db->EnableAutoCompaction({db->DefaultColumnFamily()});
+    }
 }
 
 bool EngBenchmarkScenario::PrepareBenchmarkData() {
