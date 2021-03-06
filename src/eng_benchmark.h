@@ -49,10 +49,10 @@ bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
     // options.IncreaseParallelism();
     // options.OptimizeLevelStyleCompaction();
     // options.PrepareForBulkLoad();
-    options.OptimizeAdaptiveLevelStyleCompaction();
+    options.OptimizeAdaptiveLevelStyleCompaction(128*1024*1024);
 
     Status s = DB::Open(options, dbpath, &db);
-    return s.ok(); 
+    return s.ok();
 }
 
 void EngBenchmarkScenario::BenchInsertScenario(void* args) {

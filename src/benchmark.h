@@ -37,7 +37,7 @@ const string kScan = "scan";
 const string kGetRandom = "getrand";
 const string kGetLast = "getlast";
 
-const int kGetCount = 1000;
+const int kGetCount = 100000;
 const string delim = "|";
 
 enum GetType {

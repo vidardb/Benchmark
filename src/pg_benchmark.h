@@ -87,6 +87,8 @@ void PGBenchmarkScenario::BenchLoadScenario(void* args) {
 }
 
 void PGBenchmarkScenario::BenchGetScenario(GetType type) {
+    C->prepare("get", "SELECT * FROM LINEITEM WHERE L_ORDERKEY = $1 AND L_LINENUMBER = $2;");
+
     if (!PrepareBenchmarkData()) {
         cout << "Prepare data failed" << endl;
         return;
@@ -100,11 +102,12 @@ void PGBenchmarkScenario::BenchGetScenario(GetType type) {
     auto start = chrono::high_resolution_clock::now();
     work T(*C);
     for (auto& t : v) {
-        string stmt = "SELECT * FROM LINEITEM WHERE ";
-        stmt += "L_ORDERKEY = " + t.first;
-        stmt += " AND L_LINENUMBER = " + t.second;
+        // string stmt = "SELECT * FROM LINEITEM WHERE ";
+        // stmt += "L_ORDERKEY = " + t.first;
+        // stmt += " AND L_LINENUMBER = " + t.second;
         // cout<<stmt<<endl;
-        pqxx::result res = T.exec(stmt);
+        // pqxx::result res = T.exec(stmt);
+        pqxx::result res = T.prepared("get")(t.first)(t.second).exec();
     }
     T.commit();
     in.close();
