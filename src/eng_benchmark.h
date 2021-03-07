@@ -199,7 +199,6 @@ int EngBenchmarkScenario::Get(int n, GetType type) {
     PrepareGetData(v, type, n);
     ifstream in(getenv(kDataSource));
 
-    auto start = chrono::high_resolution_clock::now();
     for (auto& t : v) {
         string orderKey, lineNumber;
         PutFixed32(&orderKey, stoul(t.first));
