@@ -10,6 +10,7 @@ using namespace std;
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/table.h"
+#include "vidardb/cache.h"
 #include "benchmark.h"
 #include "util.h"
 using namespace vidardb;
@@ -34,6 +35,8 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     void EncodeTuple(const string& s, string& k, string& v);
     string DecodeTuple(const string& s);
 
+    int Get(int n, GetType type);
+
     DB* db;
 };
 
@@ -49,6 +52,10 @@ bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
     // options.IncreaseParallelism();
     // options.OptimizeLevelStyleCompaction();
     // options.PrepareForBulkLoad();
+    BlockBasedTableOptions block_based_options;
+    block_based_options.block_cache =
+        NewLRUCache(static_cast<size_t>(96 * 1024 * 1024));
+    options.table_factory.reset(NewBlockBasedTableFactory(block_based_options));
     options.OptimizeAdaptiveLevelStyleCompaction(128*1024*1024);
 
     Status s = DB::Open(options, dbpath, &db);
@@ -187,20 +194,11 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
          << seconds << " s, tps = " << tps << endl;
 }
 
-void EngBenchmarkScenario::BenchGetScenario(GetType type) {
-    if (!PrepareBenchmarkData()) {
-        cout << "Prepare data failed" << endl;
-        return;
-    }
-    if (type == GetType::GetRand) {
-        db->CompactRange(CompactRangeOptions(), nullptr, nullptr);
-    }
-
+int EngBenchmarkScenario::Get(int n, GetType type) {
     vector<pair<string, string>> v;
-    PrepareGetData(v, type);
+    PrepareGetData(v, type, n);
     ifstream in(getenv(kDataSource));
 
-    cout << "Start to benchmark get rate ..." << endl;
     auto start = chrono::high_resolution_clock::now();
     for (auto& t : v) {
         string orderKey, lineNumber;
@@ -214,11 +212,26 @@ void EngBenchmarkScenario::BenchGetScenario(GetType type) {
 
     in.close();
 
+    return v.size();
+}
+
+void EngBenchmarkScenario::BenchGetScenario(GetType type) {
+    if (!PrepareBenchmarkData()) {
+        cout << "Prepare data failed" << endl;
+        return;
+    }
+
+    cout << "Start to warmup ..." << endl;
+    Get(kWarmCount, GetRand);
+
+    cout << "Start to benchmark get rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+    int n = Get(kGetCount, type);
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
-    double tps = v.size() / seconds;
-    cout << "Get " << v.size() << " rows and take "
+    double tps = n / seconds;
+    cout << "Get " << n << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 }
 

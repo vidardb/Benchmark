@@ -7,6 +7,7 @@
 #include <chrono>
 #include <unordered_map>
 #include <set>
+#include <algorithm>
 using namespace std;
 
 #include <pqxx/pqxx>
@@ -37,6 +38,7 @@ const string kScan = "scan";
 const string kGetRandom = "getrand";
 const string kGetLast = "getlast";
 
+const int kWarmCount = 1000000;
 const int kGetCount = 100000;
 const string delim = "|";
 
@@ -62,15 +64,16 @@ class BenchmarkScenario {
     virtual bool PrepareBenchmarkData() { return true; }
     virtual void DisplayBenchmarkInfo() {}
 
-    virtual void PrepareGetData(vector<pair<string, string>>& v, GetType type) {
+    virtual void PrepareGetData(vector<pair<string, string>>& v, GetType type, int n) {
         unsigned long long count = GetLineCount(getenv(kDataSource));
+        n = min(static_cast<unsigned long long>(n), count);
         set<int> s;
         if (type == GetType::GetRand) {
-            for (int i=0; i<kGetCount; ++i) {
+            for (int i=0; i<n; ++i) {
                 s.insert(rand()%count);
             }
         } else if (type == GetType::GetLast) {
-            for (int i=count-kGetCount; i<count; ++i) {
+            for (int i=count-n; i<count; ++i) {
                 s.insert(i);
             }
         }

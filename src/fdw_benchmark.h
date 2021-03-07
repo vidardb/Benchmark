@@ -27,6 +27,8 @@ class FDWBenchmarkScenario : public DBBenchmarkScenario {
 
  protected:
     vector<string> EncodeTuple(const string& line);
+
+    int Get(int n, GetType type);
 };
 
 void FDWBenchmarkScenario::BenchInsertScenario(void* args) {
@@ -85,18 +87,11 @@ void FDWBenchmarkScenario::BenchLoadScenario(void* args) {
          << seconds << " s, tps = " << tps << endl;
 }
 
-void FDWBenchmarkScenario::BenchGetScenario(GetType type) {
-    if (!PrepareBenchmarkData()) {
-        cout << "Prepare data failed" << endl;
-        return;
-    }
-    
+int FDWBenchmarkScenario::Get(int n, GetType type) {
     vector<pair<string, string>> v;
-    PrepareGetData(v, type);
+    PrepareGetData(v, type, n);
     ifstream in(getenv(kDataSource));
 
-    cout << "Start to benchmark get rate ..." << endl;
-    auto start = chrono::high_resolution_clock::now();
     work T(*C);
     for (auto& t : v) {
         string stmt = "SELECT * FROM LINEITEM WHERE ";
@@ -107,12 +102,26 @@ void FDWBenchmarkScenario::BenchGetScenario(GetType type) {
     }
     T.commit();
     in.close();
+    return v.size();
+}
 
+void FDWBenchmarkScenario::BenchGetScenario(GetType type) {
+    if (!PrepareBenchmarkData()) {
+        cout << "Prepare data failed" << endl;
+        return;
+    }
+    
+    cout << "Start to warmup ..." << endl;
+    Get(kWarmCount, GetRand);
+
+    cout << "Start to benchmark get rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+    int n = Get(kGetCount, type);
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> ms = end - start;
     double seconds = ms.count() / 1000;
-    double tps = v.size() / seconds;
-    cout << "Get " << v.size() << " rows and take "
+    double tps = n / seconds;
+    cout << "Get " << n << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 }
 
