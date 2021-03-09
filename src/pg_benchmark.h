@@ -28,7 +28,7 @@ class PGBenchmarkScenario : public DBBenchmarkScenario {
  protected:
     vector<string> EncodeTuple(const string& line);
 
-    int Get(int n, GetType type);
+    void Get(int n, GetType type);
 };
 
 void PGBenchmarkScenario::BenchInsertScenario(void* args) {
@@ -88,11 +88,18 @@ void PGBenchmarkScenario::BenchLoadScenario(void* args) {
          << seconds << " s, tps = " << tps << endl;
 }
 
-int PGBenchmarkScenario::Get(int n, GetType type) {
+bool PGBenchmarkScenario::PrepareBenchmarkData() {
+    cout << "Start to prepare benchmark data ..." << endl;
+    BenchLoadScenario();
+    return true;
+}
+
+void PGBenchmarkScenario::Get(int n, GetType type) {
     vector<pair<string, string>> v;
     PrepareGetData(v, type, n);
-    ifstream in(getenv(kDataSource));
 
+    cout << "Start to benchmark get rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
     work T(*C);
     for (auto& t : v) {
         // string stmt = "SELECT * FROM LINEITEM WHERE ";
@@ -103,47 +110,28 @@ int PGBenchmarkScenario::Get(int n, GetType type) {
         pqxx::result res = T.prepared("get")(t.first)(t.second).exec();
     }
     T.commit();
-    in.close();
-    return v.size();
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = v.size() / seconds;
+    cout << "Get " << v.size() << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
 }
 
 void PGBenchmarkScenario::BenchGetScenario(GetType type) {
-    C->prepare("get", "SELECT * FROM LINEITEM WHERE L_ORDERKEY = $1 AND L_LINENUMBER = $2;");
-
     if (!PrepareBenchmarkData()) {
         cout << "Prepare data failed" << endl;
         return;
     }
     
-    cout << "Start to warmup ..." << endl;
-    Get(kWarmCount, GetRand);
+    C->prepare("get", "SELECT * FROM LINEITEM WHERE L_ORDERKEY = $1 AND L_LINENUMBER = $2;");
 
-    cout << "Start to benchmark get rate ..." << endl;
-    auto start = chrono::high_resolution_clock::now();
-    int n = Get(kGetCount, type);
-    auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double, milli> ms = end - start;
-    double seconds = ms.count() / 1000;
-    double tps = n / seconds;
-    cout << "Get " << n << " rows and take "
-         << seconds << " s, tps = " << tps << endl;
-}
-
-bool PGBenchmarkScenario::PrepareBenchmarkData() {
-    work T(*C);
-    tablewriter W(T, string(kTableName));
-    ifstream in(string(getenv(kDataSource)));
-
-    cout << "Preparing benchmark data ..." << endl;
-    for (string line; getline(in, line); ) {
-        vector<string> row(EncodeTuple(line));
-        W.insert(row);
+    if (kWarmCount > 0) {
+        cout << "Start to warmup ..." << endl;
+        Get(kWarmCount, GetRand);
     }
 
-    W.complete();
-    T.commit();
-    in.close();
-    return true;
+    Get(kGetCount, type);
 }
 
 vector<string> PGBenchmarkScenario::EncodeTuple(const string& line) {

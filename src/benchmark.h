@@ -38,8 +38,8 @@ const string kScan = "scan";
 const string kGetRandom = "getrand";
 const string kGetLast = "getlast";
 
-const int kWarmCount = 1000000;
-const int kGetCount = 100000;
+const int kWarmCount = 0;
+const int kGetCount = 10000;
 const string delim = "|";
 
 enum GetType {
@@ -65,6 +65,8 @@ class BenchmarkScenario {
     virtual void DisplayBenchmarkInfo() {}
 
     virtual void PrepareGetData(vector<pair<string, string>>& v, GetType type, int n) {
+        cout << "Start to prepare get data ..." << endl;
+
         unsigned long long count = GetLineCount(getenv(kDataSource));
         n = min(static_cast<unsigned long long>(n), count);
         set<int> s;

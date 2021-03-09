@@ -4,7 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <chrono>
 using namespace std;
 
 #include "vidardb/db.h"
@@ -35,7 +34,7 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     void EncodeTuple(const string& s, string& k, string& v);
     string DecodeTuple(const string& s);
 
-    int Get(int n, GetType type);
+    void Get(int n, GetType type);
 
     DB* db;
 };
@@ -131,7 +130,7 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     }
 
     auto end = chrono::high_resolution_clock::now();
-    db->Flush(FlushOptions());
+    // db->Flush(FlushOptions());
     in.close();
 
     chrono::duration<double, milli> ms = end - start;
@@ -140,26 +139,14 @@ void EngBenchmarkScenario::BenchLoadScenario(void* args) {
     cout << "Load " << count << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 
-    if (!disable_auto_compactions) {
-        db->EnableAutoCompaction({db->DefaultColumnFamily()});
-    }
+    // if (!disable_auto_compactions) {
+    //     db->EnableAutoCompaction({db->DefaultColumnFamily()});
+    // }
 }
 
 bool EngBenchmarkScenario::PrepareBenchmarkData() {
-    ifstream in(string(getenv(kDataSource)));
-
-    cout << "Preparing benchmark data ..." << endl;
-    for (string line; getline(in, line); ) {
-        string key, value;
-        EncodeTuple(line, key, value);
-
-        Status s = db->Put(WriteOptions(), key, value);
-        if (!s.ok()) {
-            cout << s.ToString() << endl;
-        }
-    }
-
-    in.close();
+    cout << "Start to prepare benchmark data ..." << endl;
+    BenchLoadScenario();
     return true;
 }
 
@@ -194,11 +181,12 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
          << seconds << " s, tps = " << tps << endl;
 }
 
-int EngBenchmarkScenario::Get(int n, GetType type) {
+void EngBenchmarkScenario::Get(int n, GetType type) {
     vector<pair<string, string>> v;
     PrepareGetData(v, type, n);
-    ifstream in(getenv(kDataSource));
 
+    cout << "Start to benchmark get rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
     for (auto& t : v) {
         string orderKey, lineNumber;
         PutFixed32(&orderKey, stoul(t.first));
@@ -208,10 +196,12 @@ int EngBenchmarkScenario::Get(int n, GetType type) {
         string val;
         db->Get(ro, key, &val);
     }
-
-    in.close();
-
-    return v.size();
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = v.size() / seconds;
+    cout << "Get " << v.size() << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
 }
 
 void EngBenchmarkScenario::BenchGetScenario(GetType type) {
@@ -220,18 +210,20 @@ void EngBenchmarkScenario::BenchGetScenario(GetType type) {
         return;
     }
 
-    cout << "Start to warmup ..." << endl;
-    Get(kWarmCount, GetRand);
+    if (kWarmCount > 0) {
+        cout << "Start to warmup ..." << endl;
+        Get(kWarmCount, GetRand);
+    }
 
-    cout << "Start to benchmark get rate ..." << endl;
-    auto start = chrono::high_resolution_clock::now();
-    int n = Get(kGetCount, type);
-    auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double, milli> ms = end - start;
-    double seconds = ms.count() / 1000;
-    double tps = n / seconds;
-    cout << "Get " << n << " rows and take "
-         << seconds << " s, tps = " << tps << endl;
+    uint64_t n = kGetCount;
+    if (type == GetLast) {
+        uint64_t num;
+        db->GetIntProperty(DB::Properties::kNumEntriesActiveMemTable, &num);
+        cout << "kNumEntriesActiveMemTable: " << num << endl;
+        n = min(num, n);
+    }
+    
+    Get(n, type);
 }
 
 void EngBenchmarkScenario::DisplayBenchmarkInfo() {

@@ -28,7 +28,7 @@ class FDWBenchmarkScenario : public DBBenchmarkScenario {
  protected:
     vector<string> EncodeTuple(const string& line);
 
-    int Get(int n, GetType type);
+    void Get(int n, GetType type);
 };
 
 void FDWBenchmarkScenario::BenchInsertScenario(void* args) {
@@ -87,11 +87,18 @@ void FDWBenchmarkScenario::BenchLoadScenario(void* args) {
          << seconds << " s, tps = " << tps << endl;
 }
 
-int FDWBenchmarkScenario::Get(int n, GetType type) {
+bool FDWBenchmarkScenario::PrepareBenchmarkData() {
+    cout << "Start to prepare benchmark data ..." << endl;
+    BenchLoadScenario();
+    return true;
+}
+
+void FDWBenchmarkScenario::Get(int n, GetType type) {
     vector<pair<string, string>> v;
     PrepareGetData(v, type, n);
-    ifstream in(getenv(kDataSource));
 
+    cout << "Start to benchmark get rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
     work T(*C);
     for (auto& t : v) {
         string stmt = "SELECT * FROM LINEITEM WHERE ";
@@ -101,8 +108,12 @@ int FDWBenchmarkScenario::Get(int n, GetType type) {
         pqxx::result res = T.exec(stmt);
     }
     T.commit();
-    in.close();
-    return v.size();
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = v.size() / seconds;
+    cout << "Get " << v.size() << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
 }
 
 void FDWBenchmarkScenario::BenchGetScenario(GetType type) {
@@ -110,36 +121,13 @@ void FDWBenchmarkScenario::BenchGetScenario(GetType type) {
         cout << "Prepare data failed" << endl;
         return;
     }
-    
-    cout << "Start to warmup ..." << endl;
-    Get(kWarmCount, GetRand);
 
-    cout << "Start to benchmark get rate ..." << endl;
-    auto start = chrono::high_resolution_clock::now();
-    int n = Get(kGetCount, type);
-    auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double, milli> ms = end - start;
-    double seconds = ms.count() / 1000;
-    double tps = n / seconds;
-    cout << "Get " << n << " rows and take "
-         << seconds << " s, tps = " << tps << endl;
-}
-
-bool FDWBenchmarkScenario::PrepareBenchmarkData() {
-    work T(*C);
-    tablewriter W(T, string(kTableName));
-    ifstream in(string(getenv(kDataSource)));
-
-    cout << "Preparing benchmark data ..." << endl;
-    for (string line; getline(in, line); ) {
-        vector<string> row(EncodeTuple(line));
-        W.insert(row);
+    if (kWarmCount > 0) {
+        cout << "Start to warmup ..." << endl;
+        Get(kWarmCount, GetRand);
     }
 
-    W.complete();
-    T.commit();
-    in.close();
-    return true;
+    Get(kGetCount, type);
 }
 
 vector<string> FDWBenchmarkScenario::EncodeTuple(const string& line) {
