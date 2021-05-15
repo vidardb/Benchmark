@@ -10,6 +10,7 @@ using namespace std;
 #include "vidardb/options.h"
 #include "vidardb/table.h"
 #include "vidardb/cache.h"
+#include "vidardb/file_iter.h"
 #include "benchmark.h"
 #include "util.h"
 using namespace vidardb;
@@ -26,7 +27,8 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     virtual void BenchLoadScenario(void* args = nullptr) override;
     virtual void BenchScanScenario(void* args = nullptr) override;
     virtual void BenchGetScenario(GetType type) override;
-    
+    virtual void BenchRangeQueryScenario(void* args = nullptr) override;
+
     virtual bool PrepareBenchmarkData() override;
     virtual void DisplayBenchmarkInfo() override;
 
@@ -178,6 +180,60 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
     cout << "Iterate " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
+}
+
+void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
+    if (!PrepareBenchmarkData()) {
+        cout << "Prepare data failed" << endl;
+        return;
+    }
+    db->CompactRange(CompactRangeOptions(), nullptr, nullptr);
+
+    string value;
+    ReadOptions ro;
+    ro.columns.push_back(6); // tax
+    unsigned long long count = 0, index = 1;
+    FileIter *it = static_cast<FileIter*>(db->NewFileIterator(ro));
+    vector<bool> block_bits; // full scan
+
+    cout << "Start to benchmark range query rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+
+    for (it->SeekToFirst(); it->Valid(); it->Next(), index++) {
+        vector<vector<MinMax>> min_max;
+        auto mix_max_start = chrono::high_resolution_clock::now();
+        Status s = it->GetMinMax(min_max);
+        assert(s.ok());
+        auto min_max_end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> min_max_ms =
+            min_max_end - mix_max_start;
+        cout << "MinMax" << index << ": " << min_max_ms.count() << " ms" << endl;
+
+        vector<RangeQueryKeyVal> res;
+        auto range_query_start = chrono::high_resolution_clock::now();
+        s = it->RangeQuery(block_bits, res);
+        assert(s.ok());
+        auto range_query_end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> range_query_ms =
+            range_query_end - range_query_start;
+        cout << "RangeQuery" << index << ": " << range_query_ms.count() << " ms"
+             << endl;
+
+        for (RangeQueryKeyVal& kv : res) {
+            value.assign(it->value().data(), it->value().size());
+            DecodeTuple(value);
+            count++;
+        }
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    delete it;
+
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = count / seconds;
+    cout << "Range query " << count << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 }
 

@@ -55,6 +55,8 @@ int main(int argc, char** argv) {
         s->BenchGetScenario(GetType::GetRand);
     } else if (StringEquals(scenario, kGetLast)) {
         s->BenchGetScenario(GetType::GetLast);
+    } else if (StringEquals(scenario, kRangeQuery)) {
+        s->BenchRangeQueryScenario();
     } else {
         cout << "unsupported scenario!" << endl;
     }
