@@ -11,6 +11,8 @@ using namespace std;
 #include "vidardb/table.h"
 #include "vidardb/cache.h"
 #include "vidardb/file_iter.h"
+#include "vidardb/comparator.h"
+#include "vidardb/splitter.h"
 #include "benchmark.h"
 #include "util.h"
 using namespace vidardb;
@@ -53,13 +55,36 @@ bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
     // options.IncreaseParallelism();
     // options.OptimizeLevelStyleCompaction();
     // options.PrepareForBulkLoad();
+
     BlockBasedTableOptions block_based_options;
     block_based_options.block_cache =
         NewLRUCache(static_cast<size_t>(96 * 1024 * 1024));
-    options.table_factory.reset(NewBlockBasedTableFactory(block_based_options));
+    shared_ptr<TableFactory> block_based_table(
+        NewBlockBasedTableFactory(block_based_options));
+
+    ColumnTableOptions column_table_options;
+    column_table_options.block_cache =
+        NewLRUCache(static_cast<size_t>(96 * 1024 * 1024));
+    column_table_options.column_count = kColumnCount;
+    for (int i = 0; i < column_table_options.column_count; i++) {
+        column_table_options.value_comparators.push_back(BytewiseComparator());
+    }
+    shared_ptr<TableFactory> column_table(
+        NewColumnTableFactory(column_table_options));
+
+    string scenario(getenv(kScenario));
+    bool use_column = StringEquals(scenario, kRangeQuery);
+
+    options.splitter.reset(NewPipeSplitter());
     options.OptimizeAdaptiveLevelStyleCompaction(128*1024*1024);
+    options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
+        block_based_table, column_table,  use_column? 0: -1));
 
     Status s = DB::Open(options, dbpath, &db);
+    if (!s.ok()) {
+        cout << s.ToString() << endl;
+    }
+
     return s.ok();
 }
 

@@ -41,6 +41,7 @@ const string kRangeQuery = "rangequery";
 
 const int kWarmCount = 0;
 const int kGetCount = 10000;
+const int kColumnCount = 14;
 const string delim = "|";
 
 enum GetType {

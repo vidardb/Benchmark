@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     if (StringEquals(scenario, kInsert)) {
         s->BenchInsertScenario();
     } else if (StringEquals(scenario, kLoad)) {
-        s->BenchLoadScenario(); 
+        s->BenchLoadScenario();
     } else if (StringEquals(scenario, kScan)) {
         s->BenchScanScenario();
     } else if (StringEquals(scenario, kGetRandom)) {
