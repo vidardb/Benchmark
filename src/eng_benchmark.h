@@ -17,6 +17,8 @@ using namespace std;
 #include "util.h"
 using namespace vidardb;
 
+#define BUFSIZE 300 * 1024 * 1024 // 300MB
+
 void PutFixed32(string* dst, uint32_t value);
 
 class EngBenchmarkScenario : public BenchmarkScenario {
@@ -217,7 +219,7 @@ void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
 
     string value;
     ReadOptions ro;
-    ro.columns.push_back(6); // tax
+    // ro.columns.push_back(6); // tax
     unsigned long long count = 0, index = 1;
     FileIter *it = static_cast<FileIter*>(db->NewFileIterator(ro));
     vector<bool> block_bits; // full scan
@@ -229,27 +231,36 @@ void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
         vector<vector<MinMax>> min_max;
         auto mix_max_start = chrono::high_resolution_clock::now();
         Status s = it->GetMinMax(min_max);
-        assert(s.ok());
+        // assert(s.ok() || s.IsNotFound());
+        if (!s.ok()) {
+            cout << s.ToString() << endl;
+            continue;
+        }
         auto min_max_end = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> min_max_ms =
             min_max_end - mix_max_start;
         cout << "MinMax" << index << ": " << min_max_ms.count() << " ms" << endl;
 
-        vector<RangeQueryKeyVal> res;
+        char* buf = new char[BUFSIZE];
+        uint64_t count;
         auto range_query_start = chrono::high_resolution_clock::now();
-        s = it->RangeQuery(block_bits, res);
+        s = it->RangeQuery(block_bits, buf, BUFSIZE, &count);
         assert(s.ok());
         auto range_query_end = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> range_query_ms =
             range_query_end - range_query_start;
-        cout << "RangeQuery" << index << ": " << range_query_ms.count() << " ms"
-             << endl;
+        cout << "RangeQuery" << index << ": " << count << ": "
+             << range_query_ms.count() << " ms" << endl;
 
-        for (RangeQueryKeyVal& kv : res) {
-            value.assign(it->value().data(), it->value().size());
-            DecodeTuple(value);
-            count++;
-        }
+        // uint64_t* end = reinterpret_cast<uint64_t*>(buf + BUFSIZ);
+        // for (auto c : ro.columns) {
+        //     for (int i = 0; i < count; ++i) {
+        //         uint64_t offset = *(--end), size = *(--end);
+        //         value.assign(buf + offset, size);
+        //         DecodeTuple(value);
+        //     }
+        // }
+        delete buf;
     }
 
     auto end = chrono::high_resolution_clock::now();
