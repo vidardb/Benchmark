@@ -231,18 +231,20 @@ void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
         vector<vector<MinMax>> min_max;
         auto mix_max_start = chrono::high_resolution_clock::now();
         Status s = it->GetMinMax(min_max);
-        // assert(s.ok() || s.IsNotFound());
-        if (!s.ok()) {
+        if (s.IsNotFound()) {
             cout << s.ToString() << endl;
             continue;
         }
+        assert(s.ok());
+
         auto min_max_end = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> min_max_ms =
             min_max_end - mix_max_start;
         cout << "MinMax" << index << ": " << min_max_ms.count() << " ms" << endl;
 
-        char* buf = new char[BUFSIZE];
         uint64_t count;
+        char* buf = new char[BUFSIZE];
+
         auto range_query_start = chrono::high_resolution_clock::now();
         s = it->RangeQuery(block_bits, buf, BUFSIZE, &count);
         assert(s.ok());
@@ -260,6 +262,7 @@ void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
         //         DecodeTuple(value);
         //     }
         // }
+
         delete buf;
     }
 
