@@ -232,6 +232,9 @@ void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
         auto mix_max_start = chrono::high_resolution_clock::now();
         Status s = it->GetMinMax(min_max);
         if (s.IsNotFound()) {
+            continue;
+        }
+        if (!s.ok()) {
             cout << s.ToString() << endl;
             continue;
         }
@@ -242,17 +245,18 @@ void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
             min_max_end - mix_max_start;
         cout << "MinMax" << index << ": " << min_max_ms.count() << " ms" << endl;
 
-        uint64_t count;
+        uint64_t valid_count, total_count;
         char* buf = new char[BUFSIZE];
 
         auto range_query_start = chrono::high_resolution_clock::now();
-        s = it->RangeQuery(block_bits, buf, BUFSIZE, &count);
+        s = it->RangeQuery(block_bits, buf, BUFSIZE, &valid_count, &total_count);
         assert(s.ok());
         auto range_query_end = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> range_query_ms =
             range_query_end - range_query_start;
-        cout << "RangeQuery" << index << ": " << count << ": "
-             << range_query_ms.count() << " ms" << endl;
+        cout << "RangeQuery" << index << ": " << valid_count << ": "
+             << total_count << ": " << range_query_ms.count() << " ms"
+             << endl;
 
         // uint64_t* end = reinterpret_cast<uint64_t*>(buf + BUFSIZ);
         // for (auto c : ro.columns) {
@@ -264,6 +268,7 @@ void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
         // }
 
         delete buf;
+        count += valid_count;
     }
 
     auto end = chrono::high_resolution_clock::now();
