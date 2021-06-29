@@ -10,9 +10,14 @@ using namespace std;
 #include "vidardb/options.h"
 #include "vidardb/table.h"
 #include "vidardb/cache.h"
+#include "vidardb/file_iter.h"
+#include "vidardb/comparator.h"
+#include "vidardb/splitter.h"
 #include "benchmark.h"
 #include "util.h"
 using namespace vidardb;
+
+#define BUFSIZE 300 * 1024 * 1024 // 300MB
 
 void PutFixed32(string* dst, uint32_t value);
 
@@ -26,7 +31,8 @@ class EngBenchmarkScenario : public BenchmarkScenario {
     virtual void BenchLoadScenario(void* args = nullptr) override;
     virtual void BenchScanScenario(void* args = nullptr) override;
     virtual void BenchGetScenario(GetType type) override;
-    
+    virtual void BenchRangeQueryScenario(void* args = nullptr) override;
+
     virtual bool PrepareBenchmarkData() override;
     virtual void DisplayBenchmarkInfo() override;
 
@@ -51,13 +57,36 @@ bool EngBenchmarkScenario::BeforeBenchmark(void* args) {
     // options.IncreaseParallelism();
     // options.OptimizeLevelStyleCompaction();
     // options.PrepareForBulkLoad();
+
     BlockBasedTableOptions block_based_options;
     block_based_options.block_cache =
         NewLRUCache(static_cast<size_t>(96 * 1024 * 1024));
-    options.table_factory.reset(NewBlockBasedTableFactory(block_based_options));
+    shared_ptr<TableFactory> block_based_table(
+        NewBlockBasedTableFactory(block_based_options));
+
+    ColumnTableOptions column_table_options;
+    column_table_options.block_cache =
+        NewLRUCache(static_cast<size_t>(96 * 1024 * 1024));
+    column_table_options.column_count = kColumnCount;
+    for (int i = 0; i < column_table_options.column_count; i++) {
+        column_table_options.value_comparators.push_back(BytewiseComparator());
+    }
+    shared_ptr<TableFactory> column_table(
+        NewColumnTableFactory(column_table_options));
+
+    string scenario(getenv(kScenario));
+    bool use_column = StringEquals(scenario, kRangeQuery);
+
+    options.splitter.reset(NewPipeSplitter());
     options.OptimizeAdaptiveLevelStyleCompaction(128*1024*1024);
+    options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
+        block_based_table, column_table,  use_column? 0: -1));
 
     Status s = DB::Open(options, dbpath, &db);
+    if (!s.ok()) {
+        cout << s.ToString() << endl;
+    }
+
     return s.ok();
 }
 
@@ -178,6 +207,77 @@ void EngBenchmarkScenario::BenchScanScenario(void* args) {
     double seconds = ms.count() / 1000;
     double tps = count / seconds;
     cout << "Iterate " << count << " rows and take "
+         << seconds << " s, tps = " << tps << endl;
+}
+
+void EngBenchmarkScenario::BenchRangeQueryScenario(void* args) {
+    if (!PrepareBenchmarkData()) {
+        cout << "Prepare data failed" << endl;
+        return;
+    }
+    db->CompactRange(CompactRangeOptions(), nullptr, nullptr);
+
+    string value;
+    ReadOptions ro;
+    // ro.columns.push_back(6); // tax
+    unsigned long long count = 0, index = 1;
+    FileIter *it = static_cast<FileIter*>(db->NewFileIterator(ro));
+    vector<bool> block_bits; // full scan
+
+    cout << "Start to benchmark range query rate ..." << endl;
+    auto start = chrono::high_resolution_clock::now();
+
+    for (it->SeekToFirst(); it->Valid(); it->Next(), index++) {
+        vector<vector<MinMax>> min_max;
+        auto mix_max_start = chrono::high_resolution_clock::now();
+        Status s = it->GetMinMax(min_max);
+        if (s.IsNotFound()) {
+            continue;
+        }
+        if (!s.ok()) {
+            cout << s.ToString() << endl;
+            continue;
+        }
+        assert(s.ok());
+
+        auto min_max_end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> min_max_ms =
+            min_max_end - mix_max_start;
+        cout << "MinMax" << index << ": " << min_max_ms.count() << " ms" << endl;
+
+        uint64_t valid_count, total_count;
+        char* buf = new char[BUFSIZE];
+
+        auto range_query_start = chrono::high_resolution_clock::now();
+        s = it->RangeQuery(block_bits, buf, BUFSIZE, &valid_count, &total_count);
+        assert(s.ok());
+        auto range_query_end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> range_query_ms =
+            range_query_end - range_query_start;
+        cout << "RangeQuery" << index << ": " << valid_count << ": "
+             << total_count << ": " << range_query_ms.count() << " ms"
+             << endl;
+
+        // uint64_t* end = reinterpret_cast<uint64_t*>(buf + BUFSIZ);
+        // for (auto c : ro.columns) {
+        //     for (int i = 0; i < count; ++i) {
+        //         uint64_t offset = *(--end), size = *(--end);
+        //         value.assign(buf + offset, size);
+        //         DecodeTuple(value);
+        //     }
+        // }
+
+        delete buf;
+        count += valid_count;
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    delete it;
+
+    chrono::duration<double, milli> ms = end - start;
+    double seconds = ms.count() / 1000;
+    double tps = count / seconds;
+    cout << "Range query " << count << " rows and take "
          << seconds << " s, tps = " << tps << endl;
 }
 

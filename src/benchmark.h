@@ -37,9 +37,11 @@ const string kLoad = "load";
 const string kScan = "scan";
 const string kGetRandom = "getrand";
 const string kGetLast = "getlast";
+const string kRangeQuery = "rangequery";
 
 const int kWarmCount = 0;
 const int kGetCount = 10000;
+const int kColumnCount = 14;
 const string delim = "|";
 
 enum GetType {
@@ -60,6 +62,9 @@ class BenchmarkScenario {
     virtual void BenchLoadScenario(void* args = nullptr) {}
     virtual void BenchScanScenario(void* args = nullptr) {}
     virtual void BenchGetScenario(GetType type) {}
+    virtual void BenchRangeQueryScenario(void* args = nullptr) {
+        cout << "Only engine platform support range query ..." << endl;
+    };
 
     virtual bool PrepareBenchmarkData() { return true; }
     virtual void DisplayBenchmarkInfo() {}

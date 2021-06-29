@@ -24,7 +24,7 @@ CREATE TABLE LINEITEM (
     L_SHIPMODE       TEXT,
     L_COMMENT        TEXT,
     primary key(L_ORDERKEY, L_LINENUMBER)
-) USING kv_am;
+) USING kv_am WITH (storage=column,batch_capacity=307200);
 
 -- Insert example --
 -- INSERT INTO LINEITEM VALUES ((5086273,1),182032,4551,21,23394.63,0.02,0.07,'A','F','1992-12-07','1992-12-16','1992-12-18','TAKE BACK RETURN','RAIL','s. furiously special packages detect blithe');
